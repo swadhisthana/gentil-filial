@@ -103,7 +103,7 @@ export default function LoginPage() {
             >
               <span className="text-3xl">🗂️</span>
               <div>
-                <p className="font-bold text-lg">Sou Gestor</p>
+                <p className="font-bold text-lg">Sou Estoquista</p>
                 <p className="text-verde-200 text-sm">Acesso com usuário e senha</p>
               </div>
             </button>
@@ -166,7 +166,7 @@ export default function LoginPage() {
             <button onClick={() => setModo('escolha')} className="text-verde-600 text-sm mb-4 flex items-center gap-1">
               ← Voltar
             </button>
-            <h2 className="text-verde-900 text-xl font-semibold mb-5 text-center">🗂️ Gestor</h2>
+            <h2 className="text-verde-900 text-xl font-semibold mb-5 text-center">🗂️ Estoquista</h2>
 
             <form onSubmit={handleLoginGestor} className="space-y-4">
               <div>

@@ -89,7 +89,7 @@ export default function GestorPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold">💊 Gentil Filial</h1>
-            <p className="text-verde-200 text-xs">Painel do Gestor · {usuario?.nome}</p>
+            <p className="text-verde-200 text-xs">Painel do Estoquista · {usuario?.nome}</p>
           </div>
           <button onClick={sair} className="text-verde-300 text-sm underline">Sair</button>
         </div>
