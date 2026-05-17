@@ -99,6 +99,22 @@ function BarcodeVisual({ ean }: { ean: string }) {
   )
 }
 
+// Passa imagem por proxy (wsrv.nl) pra resolver hotlink protection + resize
+function viaProxy(url: string, w = 200, h = 240) {
+  // Algumas URLs já vêm de CDNs que aceitam hotlink — vamos passar tudo pelo proxy
+  // pra padronizar o tamanho e contornar hotlink protection
+  const params = new URLSearchParams({
+    url: url.replace(/^https?:\/\//, ''),
+    w: String(w),
+    h: String(h),
+    fit: 'contain',
+    bg: 'white',
+    output: 'webp',
+    q: '85',
+  })
+  return `https://wsrv.nl/?${params.toString()}`
+}
+
 // Imagem do produto
 function ImgProduto({ produto, size = 'sm' }: { produto: { categoria: string; imagem_url?: string | null; nome?: string }; size?: 'sm' | 'lg' }) {
   const [erro, setErro] = useState(false)
@@ -107,10 +123,12 @@ function ImgProduto({ produto, size = 'sm' }: { produto: { categoria: string; im
   const placeholderGrad = COR_CAT[produto.categoria] || 'from-gray-50 to-gray-100'
 
   if (produto.imagem_url && !erro) {
+    const w = size === 'lg' ? 320 : 200
+    const h = size === 'lg' ? 320 : 240
     return (
       <div className={`${dims} rounded-xl bg-white flex items-center justify-center flex-shrink-0 border border-verde-100 overflow-hidden p-1.5`}>
         <img
-          src={produto.imagem_url}
+          src={viaProxy(produto.imagem_url, w, h)}
           alt={produto.nome || ''}
           loading="lazy"
           className="w-full h-full object-contain"
@@ -166,7 +184,7 @@ function LinhaLaboratorio({
           </svg>
         ) : temLogo ? (
           <img
-            src={logoUrl!}
+            src={viaProxy(logoUrl!, 100, 100)}
             alt={laboratorio}
             loading="lazy"
             className="max-w-full max-h-full object-contain"
