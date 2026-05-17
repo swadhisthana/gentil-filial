@@ -92,11 +92,31 @@ function BarcodeVisual({ ean }: { ean: string }) {
   )
 }
 
-// Imagem placeholder do produto (gradient + ícone)
-function ImgProduto({ categoria }: { categoria: string }) {
+// Imagem do produto (real se disponível, senão placeholder colorido)
+function ImgProduto({ produto, size = 'sm' }: { produto: { categoria: string; imagem_url?: string | null; nome?: string }; size?: 'sm' | 'lg' }) {
+  const [erro, setErro] = useState(false)
+  const dims = size === 'lg' ? 'w-32 h-32' : 'w-20 h-24'
+  const placeholderIcon = ICONES_CAT[produto.categoria] || '📦'
+  const placeholderGrad = COR_CAT[produto.categoria] || 'from-gray-50 to-gray-100'
+
+  if (produto.imagem_url && !erro) {
+    return (
+      <div className={`${dims} rounded-xl bg-white flex items-center justify-center flex-shrink-0 border border-verde-100 overflow-hidden`}>
+        <img
+          src={produto.imagem_url}
+          alt={produto.nome || ''}
+          loading="lazy"
+          className="w-full h-full object-contain"
+          onError={() => setErro(true)}
+          referrerPolicy="no-referrer"
+        />
+      </div>
+    )
+  }
+
   return (
-    <div className={`w-20 h-24 rounded-xl bg-gradient-to-br ${COR_CAT[categoria] || 'from-gray-50 to-gray-100'} flex items-center justify-center flex-shrink-0 border border-gray-100`}>
-      <span className="text-3xl opacity-70">{ICONES_CAT[categoria] || '📦'}</span>
+    <div className={`${dims} rounded-xl bg-gradient-to-br ${placeholderGrad} flex items-center justify-center flex-shrink-0 border border-gray-100`}>
+      <span className={size === 'lg' ? 'text-5xl opacity-70' : 'text-3xl opacity-70'}>{placeholderIcon}</span>
     </div>
   )
 }
@@ -140,7 +160,7 @@ function ModalProduto({
       <div className="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-5" />
         <div className="flex justify-center mb-3">
-          <ImgProduto categoria={produto.categoria} />
+          <ImgProduto produto={produto} size="lg" />
         </div>
         <span className={`categoria-${produto.categoria} mb-3 inline-block`}>{produto.categoria}</span>
         <h2 className="text-xl font-bold text-verde-900 leading-tight mb-1">{produto.nome}</h2>
@@ -201,7 +221,7 @@ function ModalRevisao({
         )}
         {carrinho.map(item => (
           <div key={item.produto.id} className="card flex items-center gap-3">
-            <ImgProduto categoria={item.produto.categoria} />
+            <ImgProduto produto={item.produto} />
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-verde-900 text-sm leading-tight">{item.produto.nome}</p>
               {item.produto.fabricante && (
@@ -275,7 +295,7 @@ export default function FarmaceuticoPage() {
   const carregarProdutos = useCallback(async () => {
     const { data } = await supabase
       .from('produtos')
-      .select('id, nome, categoria, fabricante, codigo_barras')
+      .select('id, nome, categoria, fabricante, codigo_barras, imagem_url')
       .order('nome')
     if (data) setProdutos(data as Produto[])
     setCarregando(false)
@@ -530,7 +550,7 @@ export default function FarmaceuticoPage() {
                 className="flex-shrink-0 active:opacity-70"
                 aria-label="Ver detalhes"
               >
-                <ImgProduto categoria={produto.categoria} />
+                <ImgProduto produto={produto} />
               </button>
 
               <div

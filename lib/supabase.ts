@@ -16,6 +16,7 @@ export type Produto = {
   categoria: 'medicamento' | 'cosmético' | 'alimento'
   fabricante?: string
   codigo_barras?: string
+  imagem_url?: string | null
 }
 
 export type Usuario = {
