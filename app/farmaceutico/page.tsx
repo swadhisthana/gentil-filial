@@ -128,67 +128,147 @@ function ImgProduto({ produto, size = 'sm' }: { produto: { categoria: string; im
   )
 }
 
-// Pill com logo do fabricante (ou texto se sem logo)
-function PillFabricante({
-  fabricante, ativo, logoUrl, onClick,
+// Linha vertical de laboratório (com logo, nome, indicador de seleção)
+function LinhaLaboratorio({
+  laboratorio, ativo, logoUrl, onClick,
 }: {
-  fabricante: string
+  laboratorio: string
   ativo: boolean
   logoUrl?: string | null
   onClick: () => void
 }) {
   const [erro, setErro] = useState(false)
-  const isTodos = fabricante === 'Todos'
-
-  if (isTodos) {
-    return (
-      <button
-        onClick={onClick}
-        className={`flex-shrink-0 px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap border-2 min-w-[80px] ${
-          ativo
-            ? 'bg-verde-800 text-white border-verde-800 shadow-sm'
-            : 'bg-white text-verde-700 border-verde-200'
-        }`}
-      >
-        Todos
-      </button>
-    )
-  }
-
-  if (logoUrl && !erro) {
-    return (
-      <button
-        onClick={onClick}
-        className={`flex-shrink-0 h-11 px-4 rounded-full transition-all whitespace-nowrap border-2 flex items-center justify-center min-w-[80px] ${
-          ativo
-            ? 'bg-verde-50 border-verde-600 shadow-sm scale-[0.97]'
-            : 'bg-white border-verde-100'
-        }`}
-        title={fabricante}
-      >
-        <img
-          src={logoUrl}
-          alt={fabricante}
-          loading="lazy"
-          className="max-h-6 max-w-[80px] object-contain"
-          onError={() => setErro(true)}
-          referrerPolicy="no-referrer"
-        />
-      </button>
-    )
-  }
+  const isTodos = laboratorio === 'Todos'
+  const temLogo = logoUrl && !erro && !isTodos
 
   return (
     <button
       onClick={onClick}
-      className={`flex-shrink-0 px-4 py-2.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border-2 ${
+      className={`w-full flex items-center gap-3 px-4 py-3 transition-colors border-l-4 active:bg-verde-50 ${
         ativo
-          ? 'bg-verde-800 text-white border-verde-800 shadow-sm'
-          : 'bg-white text-verde-700 border-verde-200'
+          ? 'bg-verde-50 border-verde-700'
+          : 'bg-white border-transparent hover:bg-verde-50/40'
       }`}
     >
-      {fabricante}
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden ${
+        isTodos
+          ? 'bg-verde-100'
+          : temLogo
+            ? 'bg-white border border-verde-100 p-1.5'
+            : 'bg-verde-50 border border-verde-100'
+      }`}>
+        {isTodos ? (
+          <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#14532d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          </svg>
+        ) : temLogo ? (
+          <img
+            src={logoUrl!}
+            alt={laboratorio}
+            loading="lazy"
+            className="max-w-full max-h-full object-contain"
+            onError={() => setErro(true)}
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <span className="text-verde-700 font-bold text-sm">
+            {laboratorio.slice(0, 2).toUpperCase()}
+          </span>
+        )}
+      </div>
+
+      <span className={`flex-1 text-left text-sm ${ativo ? 'font-bold text-verde-900' : 'font-medium text-verde-800'}`}>
+        {laboratorio}
+      </span>
+
+      {ativo && (
+        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#14532d" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )}
     </button>
+  )
+}
+
+// Modal bottom sheet com lista vertical de laboratórios + busca interna
+function ModalLaboratorios({
+  laboratorios, ativo, logos, onSelecionar, onFechar,
+}: {
+  laboratorios: string[]
+  ativo: string
+  logos: Record<string, string>
+  onSelecionar: (l: string) => void
+  onFechar: () => void
+}) {
+  const [buscaLab, setBuscaLab] = useState('')
+  const filtrados = useMemo(
+    () => laboratorios.filter(l => l.toLowerCase().includes(buscaLab.toLowerCase())),
+    [laboratorios, buscaLab]
+  )
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col" onClick={onFechar}>
+      <div className="absolute inset-0 bg-black/50" />
+      <div className="relative flex-1" />
+      <div
+        className="relative bg-white rounded-t-3xl flex flex-col shadow-2xl max-h-[85vh]"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Handle */}
+        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-2.5 mb-1" />
+
+        {/* Header */}
+        <div className="px-4 pt-3 pb-3 border-b border-verde-100">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 text-verde-800">
+              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+              <h2 className="text-base font-bold">Filtrar por Laboratório</h2>
+            </div>
+            <button
+              onClick={onFechar}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-verde-500 active:bg-verde-50 text-xl leading-none"
+              aria-label="Fechar"
+            >×</button>
+          </div>
+          <input
+            type="search"
+            placeholder="🔍 Buscar laboratório..."
+            value={buscaLab}
+            onChange={e => setBuscaLab(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl bg-verde-50 border border-verde-100 text-verde-900 placeholder-verde-400 focus:outline-none focus:border-verde-500 text-sm"
+            autoFocus
+          />
+        </div>
+
+        {/* Lista */}
+        <div className="flex-1 overflow-y-auto divide-y divide-verde-50">
+          {filtrados.length === 0 ? (
+            <p className="text-center text-verde-500 text-sm py-8">Nenhum laboratório encontrado.</p>
+          ) : (
+            filtrados.map(lab => (
+              <LinhaLaboratorio
+                key={lab}
+                laboratorio={lab}
+                ativo={ativo === lab}
+                logoUrl={logos[lab]}
+                onClick={() => { onSelecionar(lab); onFechar() }}
+              />
+            ))
+          )}
+        </div>
+
+        <div className="px-4 py-3 border-t border-verde-100 text-center bg-verde-50/40">
+          <p className="text-verde-500 text-xs">
+            {filtrados.length} laboratório{filtrados.length === 1 ? '' : 's'}
+          </p>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -234,7 +314,7 @@ function ModalProduto({
         <span className={`categoria-${produto.categoria} mb-3 inline-block`}>{produto.categoria}</span>
         <h2 className="text-xl font-bold text-verde-900 leading-tight mb-1">{produto.nome}</h2>
         {produto.fabricante && (
-          <p className="text-verde-600 text-sm mb-4">🏭 {produto.fabricante}</p>
+          <p className="text-verde-600 text-sm mb-4">🏭 Laboratório: <strong>{produto.fabricante}</strong></p>
         )}
         {produto.codigo_barras && (
           <div className="flex flex-col items-center py-4 border-y border-verde-100 my-4">
@@ -294,7 +374,7 @@ function ModalRevisao({
                 <p className="font-bold text-verde-900 text-sm leading-tight">{item.produto.nome}</p>
                 {item.produto.fabricante && (
                   <p className="text-xs mt-0.5">
-                    <span className="text-verde-500">Fabricante: </span>
+                    <span className="text-verde-500">Laboratório: </span>
                     <span className="text-verde-700 font-semibold">{item.produto.fabricante}</span>
                   </p>
                 )}
@@ -356,6 +436,7 @@ export default function FarmaceuticoPage() {
   const [produtoDetalhe, setProdutoDetalhe] = useState<Produto | null>(null)
   const [revisao, setRevisao] = useState(false)
   const [logosFabricantes, setLogosFabricantes] = useState<Record<string, string>>({})
+  const [modalLab, setModalLab] = useState(false)
 
   useEffect(() => {
     const dados = localStorage.getItem('gf_usuario')
@@ -550,39 +631,38 @@ export default function FarmaceuticoPage() {
 
         <input
           type="search"
-          placeholder="🔍 Buscar produto, fabricante ou código..."
+          placeholder="🔍 Buscar produto, laboratório ou código..."
           value={busca}
           onChange={e => setBusca(e.target.value)}
           className="w-full px-4 py-2.5 rounded-xl bg-verde-50 border border-verde-100 text-verde-900 placeholder-verde-400 focus:outline-none focus:border-verde-500 text-sm"
         />
       </div>
 
-      {/* CARD DE FILTRO POR FABRICANTE */}
-      <div className="mx-4 mt-3 bg-white rounded-2xl shadow-sm border border-verde-100">
-        <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
-          <div className="flex items-center gap-2 text-verde-700">
-            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-            </svg>
-            <span className="font-semibold text-sm">Filtrar por Fabricante</span>
-          </div>
-          <span className="text-verde-400 text-xl leading-none">›</span>
-        </div>
-
-        <div className="px-3 pb-3 pt-1">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
-            {fabricantes.map(fab => (
-              <PillFabricante
-                key={fab}
-                fabricante={fab}
-                ativo={fabricanteAtivo === fab}
-                logoUrl={logosFabricantes[fab]}
-                onClick={() => setFabricanteAtivo(fab)}
-              />
-            ))}
+      {/* CARD DE FILTRO POR LABORATÓRIO (trigger pro modal vertical) */}
+      <button
+        onClick={() => setModalLab(true)}
+        className="mx-4 mt-3 w-[calc(100%-2rem)] bg-white rounded-2xl shadow-sm border border-verde-100 flex items-center justify-between px-4 py-3.5 active:bg-verde-50/40"
+      >
+        <div className="flex items-center gap-2.5 text-verde-700">
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+          </svg>
+          <div className="text-left">
+            <p className="font-semibold text-sm leading-tight">Filtrar por Laboratório</p>
+            <p className="text-verde-500 text-xs mt-0.5">
+              {fabricanteAtivo === 'Todos' ? 'Todos os laboratórios' : fabricanteAtivo}
+            </p>
           </div>
         </div>
-      </div>
+        <div className="flex items-center gap-1">
+          {fabricanteAtivo !== 'Todos' && (
+            <span className="bg-verde-100 text-verde-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              1 ativo
+            </span>
+          )}
+          <span className="text-verde-400 text-2xl leading-none">›</span>
+        </div>
+      </button>
 
       {periodo === 'encerrado' && (
         <div className="mx-4 mt-4 bg-gray-100 border border-gray-300 text-gray-600 rounded-xl px-4 py-3 text-sm font-medium text-center">
@@ -641,7 +721,7 @@ export default function FarmaceuticoPage() {
                 <div className="mt-1 space-y-0.5">
                   {produto.fabricante && (
                     <p className="text-xs leading-snug">
-                      <span className="text-verde-500">Fabricante: </span>
+                      <span className="text-verde-500">Laboratório: </span>
                       <span className="text-verde-700 font-semibold">{produto.fabricante}</span>
                     </p>
                   )}
@@ -728,6 +808,16 @@ export default function FarmaceuticoPage() {
           onAlterarQtd={alterarQuantidade}
           onFechar={() => setRevisao(false)}
           onConfirmar={confirmarSolicitacao}
+        />
+      )}
+
+      {modalLab && (
+        <ModalLaboratorios
+          laboratorios={fabricantes}
+          ativo={fabricanteAtivo}
+          logos={logosFabricantes}
+          onSelecionar={setFabricanteAtivo}
+          onFechar={() => setModalLab(false)}
         />
       )}
     </div>
