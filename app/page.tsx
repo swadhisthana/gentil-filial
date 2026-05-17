@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -17,28 +17,21 @@ export default function LoginPage() {
   const [carregandoGestor, setCarregandoGestor] = useState(false)
 
   // Farmacêutico
-  const [filialId, setFilialId] = useState('')
-  const [farmaceuticoId, setFarmaceuticoId] = useState('')
   const [farmaceuticos, setFarmaceuticos] = useState<{ id: number; nome: string }[]>([])
+  const [farmaceuticoId, setFarmaceuticoId] = useState('')
   const [carregandoFarma, setCarregandoFarma] = useState(false)
 
-  const filiais = Array.from({ length: 10 }, (_, i) => ({ id: i + 1, nome: `FILIAL ${i + 1}` }))
-
-  async function handleFilialChange(id: string) {
-    setFilialId(id)
-    setFarmaceuticoId('')
-    if (!id) { setFarmaceuticos([]); return }
-    const { data } = await supabase
+  useEffect(() => {
+    supabase
       .from('usuarios')
       .select('id, nome')
       .eq('tipo', 'farmaceutico')
-      .eq('filial_id', id)
       .order('nome')
-    setFarmaceuticos(data ?? [])
-  }
+      .then(({ data }) => setFarmaceuticos(data ?? []))
+  }, [])
 
   async function handleEntrarFarmaceutico() {
-    if (!filialId || !farmaceuticoId) return
+    if (!farmaceuticoId) return
     setCarregandoFarma(true)
     const { data } = await supabase
       .from('usuarios')
@@ -75,7 +68,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-verde-900 flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-lg mb-4">
             <span className="text-4xl">💊</span>
@@ -84,7 +76,7 @@ export default function LoginPage() {
           <p className="text-verde-200 text-sm mt-1">Controle de Transferência de Estoque</p>
         </div>
 
-        {/* TELA DE ESCOLHA */}
+        {/* ESCOLHA */}
         {modo === 'escolha' && (
           <div className="space-y-3">
             <button
@@ -94,7 +86,7 @@ export default function LoginPage() {
               <span className="text-3xl">👩‍⚕️</span>
               <div>
                 <p className="font-bold text-lg">Sou Farmacêutico</p>
-                <p className="text-verde-600 text-sm">Selecione seu nome e filial</p>
+                <p className="text-verde-600 text-sm">Selecione seu nome</p>
               </div>
             </button>
             <button
@@ -110,48 +102,32 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* TELA FARMACÊUTICO */}
+        {/* FARMACÊUTICO */}
         {modo === 'farmaceutico' && (
           <div className="bg-white rounded-2xl shadow-xl p-6">
-            <button onClick={() => setModo('escolha')} className="text-verde-600 text-sm mb-4 flex items-center gap-1">
-              ← Voltar
-            </button>
-            <h2 className="text-verde-900 text-xl font-semibold mb-5 text-center">👩‍⚕️ Farmacêutico</h2>
+            <button onClick={() => setModo('escolha')} className="text-verde-600 text-sm mb-4">← Voltar</button>
+            <h2 className="text-verde-900 text-xl font-semibold mb-5 text-center">👩‍⚕️ Quem é você?</h2>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-verde-800 text-sm font-medium mb-1">Sua Filial</label>
-                <select
-                  value={filialId}
-                  onChange={e => handleFilialChange(e.target.value)}
-                  className="input-field"
-                >
-                  <option value="">Selecione a filial...</option>
-                  {filiais.map(f => (
-                    <option key={f.id} value={f.id}>{f.nome}</option>
-                  ))}
-                </select>
-              </div>
-
-              {filialId && (
-                <div>
-                  <label className="block text-verde-800 text-sm font-medium mb-1">Seu Nome</label>
-                  <select
-                    value={farmaceuticoId}
-                    onChange={e => setFarmaceuticoId(e.target.value)}
-                    className="input-field"
+              <div className="grid grid-cols-1 gap-2 max-h-72 overflow-y-auto pr-1">
+                {farmaceuticos.map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => setFarmaceuticoId(String(f.id))}
+                    className={`w-full text-left px-4 py-3 rounded-xl border-2 font-medium transition-all ${
+                      farmaceuticoId === String(f.id)
+                        ? 'border-verde-700 bg-verde-50 text-verde-900'
+                        : 'border-verde-100 text-verde-800 hover:border-verde-300'
+                    }`}
                   >
-                    <option value="">Selecione seu nome...</option>
-                    {farmaceuticos.map(f => (
-                      <option key={f.id} value={f.id}>{f.nome}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
+                    {f.nome}
+                  </button>
+                ))}
+              </div>
 
               <button
                 onClick={handleEntrarFarmaceutico}
-                disabled={!filialId || !farmaceuticoId || carregandoFarma}
+                disabled={!farmaceuticoId || carregandoFarma}
                 className="btn-verde w-full text-center disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {carregandoFarma ? 'Entrando...' : 'Entrar'}
@@ -160,49 +136,26 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* TELA GESTOR */}
+        {/* ESTOQUISTA */}
         {modo === 'gestor' && (
           <div className="bg-white rounded-2xl shadow-xl p-6">
-            <button onClick={() => setModo('escolha')} className="text-verde-600 text-sm mb-4 flex items-center gap-1">
-              ← Voltar
-            </button>
+            <button onClick={() => setModo('escolha')} className="text-verde-600 text-sm mb-4">← Voltar</button>
             <h2 className="text-verde-900 text-xl font-semibold mb-5 text-center">🗂️ Estoquista</h2>
-
             <form onSubmit={handleLoginGestor} className="space-y-4">
               <div>
                 <label className="block text-verde-800 text-sm font-medium mb-1">Usuário</label>
-                <input
-                  type="text"
-                  value={usuario}
-                  onChange={e => setUsuario(e.target.value)}
-                  className="input-field"
-                  placeholder="seu.usuario"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  required
-                />
+                <input type="text" value={usuario} onChange={e => setUsuario(e.target.value)}
+                  className="input-field" placeholder="seu.usuario" autoCapitalize="none" autoCorrect="off" required />
               </div>
               <div>
                 <label className="block text-verde-800 text-sm font-medium mb-1">Senha</label>
-                <input
-                  type="password"
-                  value={senha}
-                  onChange={e => setSenha(e.target.value)}
-                  className="input-field"
-                  placeholder="••••••••"
-                  required
-                />
+                <input type="password" value={senha} onChange={e => setSenha(e.target.value)}
+                  className="input-field" placeholder="••••••••" required />
               </div>
               {erroGestor && (
-                <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
-                  {erroGestor}
-                </div>
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{erroGestor}</div>
               )}
-              <button
-                type="submit"
-                disabled={carregandoGestor}
-                className="btn-verde w-full text-center disabled:opacity-60"
-              >
+              <button type="submit" disabled={carregandoGestor} className="btn-verde w-full text-center disabled:opacity-60">
                 {carregandoGestor ? 'Entrando...' : 'Entrar'}
               </button>
             </form>

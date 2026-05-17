@@ -91,7 +91,10 @@ export default function GestorPage() {
             <h1 className="text-lg font-bold">💊 Gentil Filial</h1>
             <p className="text-verde-200 text-xs">Painel do Estoquista · {usuario?.nome}</p>
           </div>
-          <button onClick={sair} className="text-verde-300 text-sm underline">Sair</button>
+          <div className="flex items-center gap-3">
+            <button onClick={() => router.push('/gestor/admin')} className="text-verde-300 text-sm">⚙️ Admin</button>
+            <button onClick={sair} className="text-verde-300 text-sm underline">Sair</button>
+          </div>
         </div>
 
         {/* Abas */}
