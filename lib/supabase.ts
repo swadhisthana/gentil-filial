@@ -30,6 +30,8 @@ export type ItemSolicitacao = {
   solicitacao_id: number
   produto_id: number
   quantidade: number
+  encontrado: boolean
+  quantidade_enviada: number | null
   produto?: Produto
 }
 
