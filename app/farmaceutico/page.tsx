@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Produto, Usuario } from '@/lib/supabase'
+import { extrairForma, IconForma } from '@/lib/parser-produto'
 
 type ItemCarrinho = {
   produto: Produto
@@ -41,25 +42,31 @@ function getPeriodoAtual(): Periodo {
   return 'encerrado'
 }
 
-// Logo Gentil Filial (cruz médica + folha)
-function LogoGentil() {
+// Logo Gentil Filial em SVG (cruz + folha)
+function LogoGentil({ size = 'md' }: { size?: 'sm' | 'md' }) {
+  const s = size === 'sm' ? 28 : 36
+  const ts = size === 'sm' ? 'text-xl' : 'text-2xl'
   return (
     <div className="flex items-center gap-2.5">
-      <svg width={38} height={38} viewBox="0 0 40 40" aria-hidden="true">
-        <rect x="16" y="6" width="8" height="28" rx="2" fill="#14532d" />
-        <rect x="6" y="16" width="28" height="8" rx="2" fill="#14532d" />
-        <path d="M27 7 C 33 4, 37 10, 33 14 C 29 12, 27 10, 27 7 Z" fill="#84cc16" />
-        <path d="M28 8 Q 31 11 33 13" stroke="#65a30d" strokeWidth="0.8" fill="none" />
+      <svg width={s} height={s} viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="20" y="10" width="8" height="28" rx="3" fill="#14532d" />
+        <rect x="10" y="20" width="28" height="8" rx="3" fill="#14532d" />
+        {/* Folha */}
+        <path
+          d="M30 6 C 39 4, 42 12, 36 16 C 32 14, 30 11, 30 6 Z"
+          fill="#84cc16"
+        />
+        <path d="M31 7 Q 35 11 36 15" stroke="#65a30d" strokeWidth="0.8" fill="none" />
       </svg>
-      <span className="text-2xl text-verde-900 font-light tracking-tight">
-        <strong className="font-bold">Gentil</strong>
-        <em className="font-medium text-verde-600 not-italic ml-1.5">Filial</em>
+      <span className={`${ts} tracking-tight leading-none`}>
+        <strong className="font-extrabold text-verde-900">Gentil</strong>
+        <em className="ml-1.5 font-medium not-italic italic text-verde-600">Filial</em>
       </span>
     </div>
   )
 }
 
-// Barcode SVG (simplified EAN representation)
+// Barcode SVG
 function BarcodeVisual({ ean }: { ean: string }) {
   if (!ean || ean.length < 8) return <p className="font-mono text-lg tracking-widest text-verde-900">{ean}</p>
 
@@ -92,16 +99,16 @@ function BarcodeVisual({ ean }: { ean: string }) {
   )
 }
 
-// Imagem do produto (real se disponível, senão placeholder colorido)
+// Imagem do produto
 function ImgProduto({ produto, size = 'sm' }: { produto: { categoria: string; imagem_url?: string | null; nome?: string }; size?: 'sm' | 'lg' }) {
   const [erro, setErro] = useState(false)
-  const dims = size === 'lg' ? 'w-32 h-32' : 'w-20 h-24'
+  const dims = size === 'lg' ? 'w-32 h-32' : 'w-[88px] h-[100px]'
   const placeholderIcon = ICONES_CAT[produto.categoria] || '📦'
   const placeholderGrad = COR_CAT[produto.categoria] || 'from-gray-50 to-gray-100'
 
   if (produto.imagem_url && !erro) {
     return (
-      <div className={`${dims} rounded-xl bg-white flex items-center justify-center flex-shrink-0 border border-verde-100 overflow-hidden`}>
+      <div className={`${dims} rounded-xl bg-white flex items-center justify-center flex-shrink-0 border border-verde-100 overflow-hidden p-1.5`}>
         <img
           src={produto.imagem_url}
           alt={produto.nome || ''}
@@ -121,30 +128,92 @@ function ImgProduto({ produto, size = 'sm' }: { produto: { categoria: string; im
   )
 }
 
-// Controle de quantidade circular
+// Pill com logo do fabricante (ou texto se sem logo)
+function PillFabricante({
+  fabricante, ativo, logoUrl, onClick,
+}: {
+  fabricante: string
+  ativo: boolean
+  logoUrl?: string | null
+  onClick: () => void
+}) {
+  const [erro, setErro] = useState(false)
+  const isTodos = fabricante === 'Todos'
+
+  if (isTodos) {
+    return (
+      <button
+        onClick={onClick}
+        className={`flex-shrink-0 px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap border-2 min-w-[80px] ${
+          ativo
+            ? 'bg-verde-800 text-white border-verde-800 shadow-sm'
+            : 'bg-white text-verde-700 border-verde-200'
+        }`}
+      >
+        Todos
+      </button>
+    )
+  }
+
+  if (logoUrl && !erro) {
+    return (
+      <button
+        onClick={onClick}
+        className={`flex-shrink-0 h-11 px-4 rounded-full transition-all whitespace-nowrap border-2 flex items-center justify-center min-w-[80px] ${
+          ativo
+            ? 'bg-verde-50 border-verde-600 shadow-sm scale-[0.97]'
+            : 'bg-white border-verde-100'
+        }`}
+        title={fabricante}
+      >
+        <img
+          src={logoUrl}
+          alt={fabricante}
+          loading="lazy"
+          className="max-h-6 max-w-[80px] object-contain"
+          onError={() => setErro(true)}
+          referrerPolicy="no-referrer"
+        />
+      </button>
+    )
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-shrink-0 px-4 py-2.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border-2 ${
+        ativo
+          ? 'bg-verde-800 text-white border-verde-800 shadow-sm'
+          : 'bg-white text-verde-700 border-verde-200'
+      }`}
+    >
+      {fabricante}
+    </button>
+  )
+}
+
 function ControleQtd({ qtd, onMenos, onMais }: { qtd: number; onMenos: () => void; onMais: () => void }) {
   return (
     <div className="flex flex-col items-center gap-1">
-      <p className="text-verde-500 text-[10px] font-medium">Quantidade</p>
+      <p className="text-verde-500 text-[11px] font-medium">Quantidade</p>
       <div className="flex items-center border-2 border-verde-300 rounded-xl bg-white overflow-hidden">
         <button
           onClick={onMenos}
           disabled={qtd === 0}
-          className="w-7 h-9 text-verde-700 font-bold text-lg disabled:text-gray-300 active:bg-verde-50"
+          className="w-8 h-9 text-verde-700 font-bold text-xl disabled:text-gray-300 active:bg-verde-50"
         >−</button>
         <div className="w-px h-5 bg-verde-200" />
-        <span className="w-8 text-center font-bold text-verde-900 text-base">{qtd}</span>
+        <span className="w-8 text-center font-bold text-verde-900">{qtd}</span>
         <div className="w-px h-5 bg-verde-200" />
         <button
           onClick={onMais}
-          className="w-7 h-9 text-verde-700 font-bold text-lg active:bg-verde-50"
+          className="w-8 h-9 text-verde-700 font-bold text-xl active:bg-verde-50"
         >+</button>
       </div>
     </div>
   )
 }
 
-// Modal de detalhe
 function ModalProduto({
   produto, qtdCarrinho, onFechar, onAdicionar, onRemover,
 }: {
@@ -191,7 +260,6 @@ function ModalProduto({
   )
 }
 
-// Modal de revisão de solicitação
 function ModalRevisao({
   carrinho, enviando, periodo, onAlterarQtd, onFechar, onConfirmar,
 }: {
@@ -206,46 +274,55 @@ function ModalRevisao({
   const labelPeriodo = periodo === 'manha' ? 'Manhã' : periodo === 'noite' ? 'Noite' : 'Encerrado'
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white" >
-      {/* Header */}
+    <div className="fixed inset-0 z-50 flex flex-col bg-white">
       <header className="bg-verde-800 text-white px-4 pt-safe pb-4 flex items-center gap-3 shadow-md">
         <button onClick={onFechar} className="w-9 h-9 rounded-full hover:bg-verde-700 flex items-center justify-center text-2xl leading-none">←</button>
         <h1 className="text-lg font-semibold flex-1">Revisar Solicitação</h1>
         <span className="bg-white text-verde-800 text-xs font-bold px-2.5 py-1 rounded-full">{total} {total === 1 ? 'item' : 'itens'}</span>
       </header>
 
-      {/* Lista */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-32">
         {carrinho.length === 0 && (
           <div className="text-center text-verde-500 py-12">Carrinho vazio.</div>
         )}
-        {carrinho.map(item => (
-          <div key={item.produto.id} className="card flex items-center gap-3">
-            <ImgProduto produto={item.produto} />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-verde-900 text-sm leading-tight">{item.produto.nome}</p>
-              {item.produto.fabricante && (
-                <p className="text-verde-600 text-xs mt-0.5">
-                  <span className="text-verde-500">Fabricante: </span>{item.produto.fabricante}
+        {carrinho.map(item => {
+          const info = extrairForma(item.produto.nome, item.produto.categoria)
+          return (
+            <div key={item.produto.id} className="card flex items-center gap-3">
+              <ImgProduto produto={item.produto} />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-verde-900 text-sm leading-tight">{item.produto.nome}</p>
+                {item.produto.fabricante && (
+                  <p className="text-xs mt-0.5">
+                    <span className="text-verde-500">Fabricante: </span>
+                    <span className="text-verde-700 font-semibold">{item.produto.fabricante}</span>
+                  </p>
+                )}
+                {item.produto.codigo_barras && (
+                  <p className="text-xs">
+                    <span className="text-verde-500">EAN: </span>
+                    <span className="text-verde-700 font-mono">{item.produto.codigo_barras}</span>
+                  </p>
+                )}
+                <div className="border-t border-dashed border-verde-200 my-1.5" />
+                <p className="text-xs flex items-center gap-1.5 text-verde-700">
+                  <IconForma tipo={info.icon} className="text-verde-600" />
+                  <span className="font-medium">{info.forma}</span>
                 </p>
-              )}
-              {item.produto.codigo_barras && (
-                <p className="text-verde-600 text-xs">
-                  <span className="text-verde-500">EAN: </span>
-                  <span className="font-mono">{item.produto.codigo_barras}</span>
-                </p>
-              )}
+                {info.embalagem && (
+                  <p className="text-[11px] text-verde-400 mt-0.5">{info.embalagem}</p>
+                )}
+              </div>
+              <ControleQtd
+                qtd={item.quantidade}
+                onMenos={() => onAlterarQtd(item.produto, -1)}
+                onMais={() => onAlterarQtd(item.produto, 1)}
+              />
             </div>
-            <ControleQtd
-              qtd={item.quantidade}
-              onMenos={() => onAlterarQtd(item.produto, -1)}
-              onMais={() => onAlterarQtd(item.produto, 1)}
-            />
-          </div>
-        ))}
+          )
+        })}
       </div>
 
-      {/* Footer fixo */}
       <div className="border-t border-verde-100 bg-white px-4 py-4 shadow-2xl">
         <button
           onClick={onConfirmar}
@@ -278,7 +355,7 @@ export default function FarmaceuticoPage() {
   const [periodo, setPeriodo] = useState<Periodo>('manha')
   const [produtoDetalhe, setProdutoDetalhe] = useState<Produto | null>(null)
   const [revisao, setRevisao] = useState(false)
-  const [filtroExpandido, setFiltroExpandido] = useState(true)
+  const [logosFabricantes, setLogosFabricantes] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const dados = localStorage.getItem('gf_usuario')
@@ -289,6 +366,13 @@ export default function FarmaceuticoPage() {
     carregarProdutos()
     setPeriodo(getPeriodoAtual())
     const timer = setInterval(() => setPeriodo(getPeriodoAtual()), 60_000)
+
+    // Carrega logos de fabricantes
+    fetch('/fabricantes_logos.json')
+      .then(r => r.ok ? r.json() : {})
+      .then(setLogosFabricantes)
+      .catch(() => {})
+
     return () => clearInterval(timer)
   }, [router])
 
@@ -379,7 +463,6 @@ export default function FarmaceuticoPage() {
   }, [produtos, categoriaAtiva, fabricanteAtivo, busca])
 
   const totalItens = carrinho.reduce((acc, i) => acc + i.quantidade, 0)
-  const labelPeriodo = periodo === 'manha' ? '🌅 Manhã' : periodo === 'noite' ? '🌙 Noite' : '🔒 Encerrado'
 
   if (carregando) {
     return (
@@ -390,28 +473,37 @@ export default function FarmaceuticoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-verde-50 pb-36">
-      {/* Header verde */}
-      <header className="bg-verde-800 text-white pt-safe sticky top-0 z-20 shadow-lg">
+    <div className="min-h-screen bg-verde-50 pb-32">
+      {/* HEADER VERDE */}
+      <header className="bg-verde-800 text-white pt-safe sticky top-0 z-20">
         <div className="px-4 py-4 flex items-center gap-3">
           <button
             onClick={sair}
-            className="w-9 h-9 rounded-full bg-verde-700/40 active:bg-verde-700 flex items-center justify-center text-2xl leading-none"
-            aria-label="Voltar / Sair"
-          >←</button>
+            className="w-9 h-9 flex items-center justify-center active:opacity-60"
+            aria-label="Voltar"
+          >
+            <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+          </button>
 
-          <h1 className="text-base font-semibold flex-1 text-center pr-12">
+          <h1 className="text-lg font-semibold flex-1 text-center pr-9">
             {LABELS_TITULO[categoriaAtiva]}
           </h1>
 
           <button
             onClick={() => setRevisao(true)}
-            className="relative w-9 h-9 flex items-center justify-center"
+            className="relative w-9 h-9 flex items-center justify-center active:opacity-60"
             aria-label="Ver carrinho"
           >
-            <span className="text-2xl">🛒</span>
+            <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
             {totalItens > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+              <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-verde-800">
                 {totalItens}
               </span>
             )}
@@ -419,34 +511,36 @@ export default function FarmaceuticoPage() {
         </div>
       </header>
 
-      {/* Card branco com logo + status */}
-      <div className="bg-white px-4 pt-5 pb-4 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
+      {/* ÁREA BRANCA com logo + selo de período */}
+      <div className="bg-white rounded-t-3xl -mt-3 relative z-10 pt-5 pb-3 px-4">
+        <div className="flex items-center justify-center mb-1">
           <LogoGentil />
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${
+        </div>
+        <div className="flex items-center justify-between mt-2 text-xs">
+          <span className="text-verde-500">
+            {usuario?.filial?.nome} · {usuario?.nome}
+          </span>
+          <span className={`font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
             periodo === 'manha' ? 'bg-amber-100 text-amber-800'
             : periodo === 'noite' ? 'bg-indigo-100 text-indigo-800'
             : 'bg-gray-200 text-gray-600'
           }`}>
-            {labelPeriodo}
+            {periodo === 'manha' ? '🌅 Manhã' : periodo === 'noite' ? '🌙 Noite' : '🔒 Encerrado'}
           </span>
         </div>
-        <p className="text-verde-600 text-xs">
-          {usuario?.filial?.nome} · {usuario?.nome}
-        </p>
       </div>
 
-      {/* Categoria + Busca */}
-      <div className="px-4 pt-3 pb-2 space-y-2">
+      {/* TABS CATEGORIA + BUSCA */}
+      <div className="px-4 pt-2 pb-2 space-y-2 bg-white">
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
           {CATEGORIAS.map(cat => (
             <button
               key={cat}
               onClick={() => setCategoriaAtiva(cat)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                 categoriaAtiva === cat
                   ? 'bg-verde-800 text-white'
-                  : 'bg-white text-verde-700 border border-verde-200'
+                  : 'bg-verde-50 text-verde-700 border border-verde-200'
               }`}
             >
               {ICONES_CAT[cat]} {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -459,49 +553,35 @@ export default function FarmaceuticoPage() {
           placeholder="🔍 Buscar produto, fabricante ou código..."
           value={busca}
           onChange={e => setBusca(e.target.value)}
-          className="w-full px-4 py-2.5 rounded-xl bg-white border border-verde-200 text-verde-900 placeholder-verde-400 focus:outline-none focus:border-verde-600 text-sm"
+          className="w-full px-4 py-2.5 rounded-xl bg-verde-50 border border-verde-100 text-verde-900 placeholder-verde-400 focus:outline-none focus:border-verde-500 text-sm"
         />
       </div>
 
-      {/* Card de Filtro por Fabricante */}
-      <div className="mx-4 mt-2 bg-white rounded-2xl shadow-sm border border-verde-100 overflow-hidden">
-        <button
-          onClick={() => setFiltroExpandido(v => !v)}
-          className="w-full flex items-center justify-between px-4 py-3 active:bg-verde-50"
-        >
+      {/* CARD DE FILTRO POR FABRICANTE */}
+      <div className="mx-4 mt-3 bg-white rounded-2xl shadow-sm border border-verde-100">
+        <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
           <div className="flex items-center gap-2 text-verde-700">
-            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
             </svg>
             <span className="font-semibold text-sm">Filtrar por Fabricante</span>
-            {fabricanteAtivo !== 'Todos' && (
-              <span className="ml-1 bg-verde-100 text-verde-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                {fabricanteAtivo}
-              </span>
-            )}
           </div>
-          <span className={`text-verde-500 text-xl transition-transform ${filtroExpandido ? 'rotate-90' : ''}`}>›</span>
-        </button>
+          <span className="text-verde-400 text-xl leading-none">›</span>
+        </div>
 
-        {filtroExpandido && (
-          <div className="px-3 pb-3 pt-1 border-t border-verde-50">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pt-2 pb-1">
-              {fabricantes.map(fab => (
-                <button
-                  key={fab}
-                  onClick={() => setFabricanteAtivo(fab)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap border-2 ${
-                    fabricanteAtivo === fab
-                      ? 'bg-verde-800 text-white border-verde-800 shadow-sm'
-                      : 'bg-white text-verde-700 border-verde-200'
-                  }`}
-                >
-                  {fab}
-                </button>
-              ))}
-            </div>
+        <div className="px-3 pb-3 pt-1">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+            {fabricantes.map(fab => (
+              <PillFabricante
+                key={fab}
+                fabricante={fab}
+                ativo={fabricanteAtivo === fab}
+                logoUrl={logosFabricantes[fab]}
+                onClick={() => setFabricanteAtivo(fab)}
+              />
+            ))}
           </div>
-        )}
+        </div>
       </div>
 
       {periodo === 'encerrado' && (
@@ -516,7 +596,7 @@ export default function FarmaceuticoPage() {
         </div>
       )}
 
-      {/* Lista de produtos */}
+      {/* LISTA DE PRODUTOS */}
       <div className="px-4 mt-3 space-y-2.5">
         <div className="flex items-baseline justify-between px-1">
           <p className="text-verde-700 text-xs font-semibold">
@@ -540,14 +620,12 @@ export default function FarmaceuticoPage() {
 
         {produtosFiltrados.map(produto => {
           const qtd = quantidadeNoCarrinho(produto.id)
+          const info = extrairForma(produto.nome, produto.categoria)
           return (
-            <div
-              key={produto.id}
-              className="card flex gap-3 items-stretch"
-            >
+            <div key={produto.id} className="card flex gap-3 items-stretch py-3.5">
               <button
                 onClick={() => setProdutoDetalhe(produto)}
-                className="flex-shrink-0 active:opacity-70"
+                className="flex-shrink-0 active:opacity-70 self-center"
                 aria-label="Ver detalhes"
               >
                 <ImgProduto produto={produto} />
@@ -562,23 +640,26 @@ export default function FarmaceuticoPage() {
                 </p>
                 <div className="mt-1 space-y-0.5">
                   {produto.fabricante && (
-                    <p className="text-xs">
+                    <p className="text-xs leading-snug">
                       <span className="text-verde-500">Fabricante: </span>
                       <span className="text-verde-700 font-semibold">{produto.fabricante}</span>
                     </p>
                   )}
                   {produto.codigo_barras && (
-                    <p className="text-xs">
+                    <p className="text-xs leading-snug">
                       <span className="text-verde-500">EAN: </span>
                       <span className="text-verde-700 font-mono">{produto.codigo_barras}</span>
                     </p>
                   )}
                 </div>
-                <div className="border-t border-dashed border-verde-200 my-1.5" />
-                <p className="text-xs flex items-center gap-1 text-verde-600">
-                  <span>{ICONES_CAT[produto.categoria]}</span>
-                  <span className="capitalize">{produto.categoria}</span>
+                <div className="border-t border-dashed border-verde-200 my-2" />
+                <p className="text-xs flex items-center gap-1.5 text-verde-700">
+                  <IconForma tipo={info.icon} className="text-verde-600" />
+                  <span className="font-medium">{info.forma}</span>
                 </p>
+                {info.embalagem && (
+                  <p className="text-[11px] text-verde-400 mt-0.5">{info.embalagem}</p>
+                )}
               </div>
 
               <div className="flex-shrink-0 self-center">
@@ -593,31 +674,32 @@ export default function FarmaceuticoPage() {
         })}
       </div>
 
-      {/* Barra inferior */}
-      {carrinho.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-verde-200 px-4 py-3 z-30 shadow-2xl flex items-center gap-3">
-          <div className="flex-shrink-0">
-            <p className="text-verde-500 text-[11px]">Itens selecionados</p>
-            <p className="text-verde-900 font-bold text-lg leading-tight">
-              {totalItens} {totalItens === 1 ? 'item' : 'itens'}
-            </p>
-          </div>
-          <button
-            onClick={() => setRevisao(true)}
-            disabled={periodo === 'encerrado'}
-            className="flex-1 btn-verde flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
-          >
-            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-            </svg>
-            <span className="font-semibold">Revisar Solicitação</span>
-            <span className="text-lg leading-none">›</span>
-          </button>
+      {/* BARRA INFERIOR */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-verde-200 px-4 py-3 z-30 shadow-2xl flex items-center gap-3">
+        <div className="flex-shrink-0">
+          <p className="text-verde-500 text-[11px]">Itens selecionados</p>
+          <p className="text-verde-900 font-bold text-lg leading-tight">
+            {totalItens} {totalItens === 1 ? 'item' : 'itens'}
+          </p>
         </div>
-      )}
+        <button
+          onClick={() => setRevisao(true)}
+          disabled={periodo === 'encerrado' || totalItens === 0}
+          className="flex-1 btn-verde flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
+        >
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
+          <span className="font-semibold">Revisar Solicitação</span>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      </div>
 
       {erro && !revisao && (
         <div className="fixed bottom-24 left-4 right-4 bg-red-100 border border-red-300 text-red-700 rounded-xl px-4 py-2 text-sm text-center z-40">
