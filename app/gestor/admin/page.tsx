@@ -18,6 +18,8 @@ export default function AdminPage() {
   const [farmaceuticos, setFarmaceuticos] = useState<Usuario[]>([])
   const [novoNome, setNovoNome] = useState('')
   const [novaFilial, setNovaFilial] = useState('1')
+  const [novoCrf, setNovoCrf] = useState('')
+  const [novoTurno, setNovoTurno] = useState<'manha' | 'noite'>('manha')
   const [editandoFarma, setEditandoFarma] = useState<Usuario | null>(null)
   const [salvandoFarma, setSalvandoFarma] = useState(false)
 
@@ -64,9 +66,13 @@ export default function AdminPage() {
       senha: usuario,
       tipo: 'farmaceutico',
       filial_id: Number(novaFilial),
+      crf: novoCrf.trim() || null,
+      turno: novoTurno,
     })
     setNovoNome('')
     setNovaFilial('1')
+    setNovoCrf('')
+    setNovoTurno('manha')
     await carregarFarmaceuticos()
     setSalvandoFarma(false)
   }
@@ -77,6 +83,8 @@ export default function AdminPage() {
     await supabase.from('usuarios').update({
       nome: editandoFarma.nome,
       filial_id: editandoFarma.filial_id,
+      crf: editandoFarma.crf || null,
+      turno: editandoFarma.turno || 'manha',
     }).eq('id', editandoFarma.id)
     setEditandoFarma(null)
     await carregarFarmaceuticos()
@@ -160,9 +168,31 @@ export default function AdminPage() {
                   onKeyDown={e => e.key === 'Enter' && adicionarFarmaceutico()}
                   className="input-field"
                 />
+                <input
+                  type="text"
+                  placeholder="CRF (opcional)"
+                  value={novoCrf}
+                  onChange={e => setNovoCrf(e.target.value)}
+                  className="input-field"
+                />
                 <select value={novaFilial} onChange={e => setNovaFilial(e.target.value)} className="input-field">
                   {FILIAIS.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
                 </select>
+                <div className="flex gap-2">
+                  {(['manha', 'noite'] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setNovoTurno(t)}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors border-2 ${
+                        novoTurno === t
+                          ? t === 'manha' ? 'bg-amber-100 border-amber-400 text-amber-800' : 'bg-indigo-100 border-indigo-400 text-indigo-800'
+                          : 'bg-white border-verde-200 text-verde-600'
+                      }`}
+                    >
+                      {t === 'manha' ? '🌅 Manhã' : '🌙 Noite'}
+                    </button>
+                  ))}
+                </div>
                 <button onClick={adicionarFarmaceutico} disabled={!novoNome.trim() || salvandoFarma}
                   className="btn-verde w-full disabled:opacity-40">
                   {salvandoFarma ? 'Salvando...' : 'Adicionar'}
@@ -179,6 +209,13 @@ export default function AdminPage() {
                       value={editandoFarma.nome}
                       onChange={e => setEditandoFarma({ ...editandoFarma, nome: e.target.value })}
                       className="input-field"
+                      placeholder="Nome completo"
+                    />
+                    <input
+                      value={editandoFarma.crf ?? ''}
+                      onChange={e => setEditandoFarma({ ...editandoFarma, crf: e.target.value })}
+                      className="input-field"
+                      placeholder="CRF (opcional)"
                     />
                     <select
                       value={editandoFarma.filial_id ?? 1}
@@ -187,6 +224,21 @@ export default function AdminPage() {
                     >
                       {FILIAIS.map(f2 => <option key={f2.id} value={f2.id}>{f2.nome}</option>)}
                     </select>
+                    <div className="flex gap-2">
+                      {(['manha', 'noite'] as const).map(t => (
+                        <button
+                          key={t}
+                          onClick={() => setEditandoFarma({ ...editandoFarma, turno: t })}
+                          className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors border-2 ${
+                            editandoFarma.turno === t
+                              ? t === 'manha' ? 'bg-amber-100 border-amber-400 text-amber-800' : 'bg-indigo-100 border-indigo-400 text-indigo-800'
+                              : 'bg-white border-verde-200 text-verde-500'
+                          }`}
+                        >
+                          {t === 'manha' ? '🌅 Manhã' : '🌙 Noite'}
+                        </button>
+                      ))}
+                    </div>
                     <div className="flex gap-2">
                       <button onClick={salvarFarmaceutico} disabled={salvandoFarma}
                         className="btn-verde flex-1 disabled:opacity-40">Salvar</button>
@@ -197,7 +249,17 @@ export default function AdminPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-verde-900">{f.nome}</p>
-                      <p className="text-verde-500 text-xs">{f.filial?.nome ?? '—'}</p>
+                      <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                        <p className="text-verde-500 text-xs">{f.filial?.nome ?? '—'}</p>
+                        {f.crf && <span className="text-blue-600 text-xs font-mono">CRF {f.crf}</span>}
+                        {f.turno && (
+                          <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
+                            f.turno === 'manha' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'
+                          }`}>
+                            {f.turno === 'manha' ? '🌅 Manhã' : '🌙 Noite'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => setEditandoFarma(f)}

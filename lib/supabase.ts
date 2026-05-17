@@ -14,6 +14,8 @@ export type Produto = {
   id: number
   nome: string
   categoria: 'medicamento' | 'cosmético' | 'alimento'
+  fabricante?: string
+  codigo_barras?: string
 }
 
 export type Usuario = {
@@ -22,6 +24,8 @@ export type Usuario = {
   usuario: string
   tipo: 'farmaceutico' | 'gestor'
   filial_id: number | null
+  crf?: string | null
+  turno?: 'manha' | 'noite' | null
   filial?: Filial
 }
 
