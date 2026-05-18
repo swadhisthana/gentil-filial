@@ -166,8 +166,8 @@ export default function LoginPage() {
       .from('usuarios')
       .select('id, nome')
       .eq('tipo', 'farmaceutico')
-      .order('nome')
-      .then(({ data }) => setFarmaceuticos(data ?? []))
+      .order('nome', { ascending: true })
+      .then(({ data }) => setFarmaceuticos((data ?? []).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))))
   }, [])
 
   async function handleEntrarFarmaceutico() {
@@ -233,8 +233,8 @@ export default function LoginPage() {
               <CardOpcao
                 ilustracao={<IlustracaoFarmaceutico />}
                 tituloLinha1="Sou"
-                tituloLinha2="Farmacêutico"
-                descricao="Acesse ferramentas e serviços exclusivos para farmacêuticos."
+                tituloLinha2="Solicitante"
+                descricao="Acesse ferramentas e serviços exclusivos para solicitantes."
                 onClick={() => setModo('farmaceutico')}
               />
               <CardOpcao
