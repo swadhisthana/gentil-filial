@@ -473,12 +473,21 @@ export default function FarmaceuticoPage() {
   }, [router])
 
   const carregarProdutos = useCallback(async () => {
-  const { data } = await supabase
-  .from('produtos')
-  .select('id, nome, categoria, fabricante, codigo_barras, imagem_url')
-  .order('nome')
-  .range(0, 9999)
-    if (data) setProdutos(data as Produto[])
+    const todos: Produto[] = []
+    const PAGE = 1000
+    let offset = 0
+    while (true) {
+      const { data } = await supabase
+        .from('produtos')
+        .select('id, nome, categoria, fabricante, codigo_barras, imagem_url')
+        .order('nome')
+        .range(offset, offset + PAGE - 1)
+      if (!data || data.length === 0) break
+      todos.push(...(data as Produto[]))
+      if (data.length < PAGE) break
+      offset += PAGE
+    }
+    setProdutos(todos)
     setCarregando(false)
   }, [])
 
