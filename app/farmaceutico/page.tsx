@@ -725,49 +725,45 @@ export default function FarmaceuticoPage() {
 
         {produtosFiltrados.map(produto => {
           const qtd = quantidadeNoCarrinho(produto.id)
-          const info = extrairForma(produto.nome, produto.categoria)
           return (
-            <div key={produto.id} className="card flex gap-3 items-stretch py-3.5">
+            <div key={produto.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex gap-3 items-center px-4 py-3.5">
+              {/* Imagem */}
               <button
                 onClick={() => setProdutoDetalhe(produto)}
-                className="flex-shrink-0 active:opacity-70 self-center"
+                className="flex-shrink-0 active:opacity-70"
                 aria-label="Ver detalhes"
               >
-                <ImgProduto produto={produto} />
+                <ImgProduto produto={produto} size="sm" />
               </button>
 
-              <div
-                className="flex-1 min-w-0 cursor-pointer"
-                onClick={() => setProdutoDetalhe(produto)}
-              >
-                <p className="font-bold text-verde-900 text-sm leading-tight line-clamp-2">
+              {/* Info */}
+              <div className="flex-1 min-w-0" onClick={() => setProdutoDetalhe(produto)}>
+                <p className="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2">
                   {produto.nome}
                 </p>
-                <div className="mt-1 space-y-0.5">
+
+                {/* Badges */}
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  <span className="bg-verde-100 text-verde-800 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+                    {produto.categoria === 'Perfumaria' ? 'Perfumaria' : 'Medicamento'}
+                  </span>
                   {produto.fabricante && (
-                    <p className="text-xs leading-snug">
-                      <span className="text-verde-500">Laboratório: </span>
-                      <span className="text-verde-700 font-semibold">{produto.fabricante}</span>
-                    </p>
-                  )}
-                  {produto.codigo_barras && (
-                    <p className="text-xs leading-snug">
-                      <span className="text-verde-500">EAN: </span>
-                      <span className="text-verde-700 font-mono">{produto.codigo_barras}</span>
-                    </p>
+                    <span className="border border-gray-300 text-gray-600 text-[11px] font-medium px-2.5 py-0.5 rounded-full">
+                      {produto.fabricante}
+                    </span>
                   )}
                 </div>
-                <div className="border-t border-dashed border-verde-200 my-2" />
-                <p className="text-xs flex items-center gap-1.5 text-verde-700">
-                  <IconForma tipo={info.icon} className="text-verde-600" />
-                  <span className="font-medium">{info.forma}</span>
-                </p>
-                {info.embalagem && (
-                  <p className="text-[11px] text-verde-400 mt-0.5">{info.embalagem}</p>
+
+                {/* EAN */}
+                {produto.codigo_barras && (
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    EAN: <span className="font-mono text-gray-500">{produto.codigo_barras}</span>
+                  </p>
                 )}
               </div>
 
-              <div className="flex-shrink-0 self-center">
+              {/* Controle quantidade */}
+              <div className="flex-shrink-0">
                 <ControleQtd
                   qtd={qtd}
                   onMenos={() => alterarQuantidade(produto, -1)}
@@ -780,28 +776,36 @@ export default function FarmaceuticoPage() {
       </div>
 
       {/* BARRA INFERIOR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-verde-200 px-4 py-3 z-30 shadow-2xl flex items-center gap-3">
-        <div className="flex-shrink-0">
-          <p className="text-verde-500 text-[11px]">Itens selecionados</p>
-          <p className="text-verde-900 font-bold text-lg leading-tight">
-            {totalItens} {totalItens === 1 ? 'item' : 'itens'}
-          </p>
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 z-30 shadow-2xl flex items-center gap-3">
+        {/* Carrinho com badge */}
+        <div className="relative flex-shrink-0">
+          <div className="w-11 h-11 rounded-full bg-verde-50 flex items-center justify-center">
+            <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+          </div>
+          {totalItens > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-verde-700 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              {totalItens}
+            </span>
+          )}
         </div>
+
+        {/* Texto */}
+        <div className="flex-1 min-w-0">
+          <p className="text-gray-500 text-xs">{totalItens} {totalItens === 1 ? 'item selecionado' : 'itens selecionados'}</p>
+        </div>
+
+        {/* Botão */}
         <button
           onClick={() => setRevisao(true)}
           disabled={periodo === 'encerrado' || totalItens === 0}
-          className="flex-1 btn-verde flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
+          className="bg-verde-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-40 active:scale-95 transition-transform"
         >
-          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-            <polyline points="10 9 9 9 8 9" />
-          </svg>
-          <span className="font-semibold">Revisar Solicitação</span>
+          Enviar solicitação
           <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 15 12 9 6" />
+            <polyline points="9 18 15 12 9 6"/>
           </svg>
         </button>
       </div>
