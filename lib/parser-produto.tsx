@@ -47,8 +47,7 @@ export function extrairForma(nome: string, categoria: string): FormaInfo {
 
   // Fallback por categoria
   if (!forma) {
-    if (categoria === 'cosmético') { forma = 'Cosmético'; icon = 'tube' }
-    else if (categoria === 'alimento') { forma = 'Alimento'; icon = 'food' }
+    if (categoria === 'Perfumaria') { forma = 'Perfumaria'; icon = 'tube' }
     else { forma = 'Medicamento'; icon = 'pill' }
   }
 

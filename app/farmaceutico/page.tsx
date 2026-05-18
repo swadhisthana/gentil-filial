@@ -13,21 +13,18 @@ type ItemCarrinho = {
 
 type Periodo = 'manha' | 'noite' | 'encerrado'
 
-const CATEGORIAS = ['medicamento', 'cosmético', 'alimento'] as const
+const CATEGORIAS = ['medicamento', 'Perfumaria'] as const
 const LABELS_TITULO: Record<string, string> = {
   medicamento: 'Solicitar Medicações',
-  cosmético: 'Solicitar Cosméticos',
-  alimento: 'Solicitar Alimentos',
+  Perfumaria: 'Solicitar Perfumaria',
 }
 const ICONES_CAT: Record<string, string> = {
   medicamento: '💊',
-  cosmético: '💄',
-  alimento: '🍎',
+  Perfumaria: '🧴',
 }
 const COR_CAT: Record<string, string> = {
   medicamento: 'from-blue-50 to-blue-100',
-  cosmético: 'from-pink-50 to-pink-100',
-  alimento: 'from-orange-50 to-orange-100',
+  Perfumaria: 'from-amber-50 to-amber-100',
 }
 
 function getPeriodoAtual(): Periodo {
@@ -476,10 +473,11 @@ export default function FarmaceuticoPage() {
   }, [router])
 
   const carregarProdutos = useCallback(async () => {
-    const { data } = await supabase
-      .from('produtos')
-      .select('id, nome, categoria, fabricante, codigo_barras, imagem_url')
-      .order('nome')
+  const { data } = await supabase
+  .from('produtos')
+  .select('id, nome, categoria, fabricante, codigo_barras, imagem_url')
+  .order('nome')
+  .range(0, 9999)
     if (data) setProdutos(data as Produto[])
     setCarregando(false)
   }, [])

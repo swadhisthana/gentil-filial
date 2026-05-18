@@ -8,7 +8,7 @@ import type { Produto, Usuario } from '@/lib/supabase'
 type Aba = 'farmaceuticos' | 'produtos'
 
 const FILIAIS = Array.from({ length: 10 }, (_, i) => ({ id: i + 1, nome: `FILIAL ${i + 1}` }))
-const CATEGORIAS = ['medicamento', 'cosmético', 'alimento'] as const
+const CATEGORIAS = ['medicamento', 'Perfumaria'] as const
 
 export default function AdminPage() {
   const router = useRouter()
@@ -26,7 +26,7 @@ export default function AdminPage() {
   // Produtos
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [novoProduto, setNovoProduto] = useState('')
-  const [novaCategoria, setNovaCategoria] = useState<'medicamento' | 'cosmético' | 'alimento'>('medicamento')
+  const [novaCategoria, setNovaCategoria] = useState<'medicamento' | 'Perfumaria'>('medicamento')
   const [filtroCategoria, setFiltroCategoria] = useState<string>('todos')
   const [filtroBusca, setFiltroBusca] = useState('')
   const [editandoProd, setEditandoProd] = useState<Produto | null>(null)

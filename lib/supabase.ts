@@ -13,7 +13,7 @@ export type Filial = {
 export type Produto = {
   id: number
   nome: string
-  categoria: 'medicamento' | 'cosmético' | 'alimento'
+  categoria: 'medicamento' | 'Perfumaria'
   fabricante?: string
   codigo_barras?: string
   imagem_url?: string | null
