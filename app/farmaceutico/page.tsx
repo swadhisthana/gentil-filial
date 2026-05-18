@@ -459,7 +459,7 @@ export default function FarmaceuticoPage() {
     const u: Usuario = JSON.parse(dados)
     if (u.tipo !== 'farmaceutico') { router.push('/gestor'); return }
     setUsuario(u)
-    carregarProdutos()
+    carregarProdutos('medicamento')
     setPeriodo(getPeriodoAtual())
     const timer = setInterval(() => setPeriodo(getPeriodoAtual()), 60_000)
 
@@ -472,7 +472,8 @@ export default function FarmaceuticoPage() {
     return () => clearInterval(timer)
   }, [router])
 
-  const carregarProdutos = useCallback(async () => {
+  const carregarProdutos = useCallback(async (cat: string) => {
+    setCarregando(true)
     const todos: Produto[] = []
     const PAGE = 1000
     let offset = 0
@@ -480,6 +481,7 @@ export default function FarmaceuticoPage() {
       const { data } = await supabase
         .from('produtos')
         .select('id, nome, categoria, fabricante, codigo_barras, imagem_url')
+        .eq('categoria', cat)
         .order('nome')
         .range(offset, offset + PAGE - 1)
       if (!data || data.length === 0) break
@@ -499,7 +501,11 @@ export default function FarmaceuticoPage() {
     return ['Todos', ...Array.from(set).sort()]
   }, [produtos, categoriaAtiva])
 
-  useEffect(() => { setFabricanteAtivo('Todos') }, [categoriaAtiva])
+  useEffect(() => {
+    setFabricanteAtivo('Todos')
+    setBusca('')
+    carregarProdutos(categoriaAtiva)
+  }, [categoriaAtiva, carregarProdutos])
 
   function sair() {
     if (!confirm('Sair da conta?')) return
