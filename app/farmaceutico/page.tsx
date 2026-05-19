@@ -287,18 +287,20 @@ function ModalLaboratorios({
   )
 }
 
-function ControleQtd({ qtd, onMenos, onMais }: { qtd: number; onMenos: () => void; onMais: () => void }) {
+function ControleQtd({ qtd, onMenos, onMais, compact = false }: { qtd: number; onMenos: () => void; onMais: () => void; compact?: boolean }) {
   return (
-    <div className="flex flex-col items-center gap-1">
-      <p className="text-verde-500 text-[11px] font-medium">Quantidade</p>
-      <div className="flex items-center border-2 border-verde-300 rounded-xl bg-white overflow-hidden">
+    <div className={`flex flex-col items-center ${compact ? 'gap-0' : 'gap-1'}`}>
+      {!compact && <p className="text-verde-500 text-[11px] font-medium">Quantidade</p>}
+      <div className={`flex items-center border-2 rounded-xl bg-white overflow-hidden transition-colors ${
+        qtd > 0 ? 'border-verde-500' : 'border-verde-200'
+      }`}>
         <button
           onClick={onMenos}
           disabled={qtd === 0}
           className="w-8 h-9 text-verde-700 font-bold text-xl disabled:text-gray-300 active:bg-verde-50"
         >−</button>
         <div className="w-px h-5 bg-verde-200" />
-        <span className="w-8 text-center font-bold text-verde-900">{qtd}</span>
+        <span className={`w-8 text-center font-bold ${qtd > 0 ? 'text-verde-900' : 'text-gray-400'}`}>{qtd}</span>
         <div className="w-px h-5 bg-verde-200" />
         <button
           onClick={onMais}
@@ -578,8 +580,11 @@ export default function FarmaceuticoPage() {
 
   if (carregando) {
     return (
-      <div className="min-h-screen bg-verde-900 flex items-center justify-center">
-        <div className="text-white text-lg">Carregando...</div>
+      <div className="min-h-screen bg-verde-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-verde-200 border-t-verde-700 rounded-full animate-spin" />
+          <p className="text-verde-700 font-semibold text-sm">Carregando produtos...</p>
+        </div>
       </div>
     )
   }
@@ -588,28 +593,31 @@ export default function FarmaceuticoPage() {
     <div className="min-h-screen bg-verde-50 pb-32">
       {/* HEADER VERDE */}
       <header className="bg-verde-800 text-white pt-safe sticky top-0 z-20">
-        <div className="px-4 py-4 flex items-center gap-3">
+        <div className="px-4 py-3.5 flex items-center gap-3">
+          {/* Botão de saída com ícone de usuário — indica login/logout, não navegação */}
           <button
             onClick={sair}
-            className="w-9 h-9 flex items-center justify-center active:opacity-60"
-            aria-label="Voltar"
+            className="w-9 h-9 flex items-center justify-center active:opacity-60 rounded-full hover:bg-verde-700"
+            aria-label="Sair da conta"
+            title="Sair"
           >
-            <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
+            <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
           </button>
 
-          <h1 className="text-lg font-semibold flex-1 text-center pr-9">
+          <h1 className="text-base font-semibold flex-1 text-center">
             {LABELS_TITULO[categoriaAtiva]}
           </h1>
 
           <button
             onClick={() => setRevisao(true)}
-            className="relative w-9 h-9 flex items-center justify-center active:opacity-60"
+            className="relative w-9 h-9 flex items-center justify-center active:opacity-60 rounded-full hover:bg-verde-700"
             aria-label="Ver carrinho"
           >
-            <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="9" cy="21" r="1" />
               <circle cx="20" cy="21" r="1" />
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
@@ -702,8 +710,13 @@ export default function FarmaceuticoPage() {
       )}
 
       {sucesso && (
-        <div className="mx-4 mt-4 bg-verde-100 border border-verde-400 text-verde-800 rounded-xl px-4 py-3 text-sm font-medium text-center animate-pulse">
-          ✅ Solicitação enviada com sucesso!
+        <div className="fixed top-20 left-4 right-4 z-50 animate-slide-down">
+          <div className="bg-verde-700 text-white rounded-2xl px-4 py-3.5 text-sm font-semibold shadow-xl flex items-center gap-2.5 justify-center">
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Solicitação enviada com sucesso!
+          </div>
         </div>
       )}
 
@@ -724,15 +737,34 @@ export default function FarmaceuticoPage() {
         </div>
 
         {produtosFiltrados.length === 0 && (
-          <div className="card text-center text-verde-500 py-10 text-sm">
-            Nenhum produto encontrado.
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-12 flex flex-col items-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-verde-50 flex items-center justify-center">
+              <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <line x1="8" y1="11" x2="14" y2="11"/>
+              </svg>
+            </div>
+            <p className="text-verde-700 font-semibold text-sm">Nenhum produto encontrado</p>
+            <p className="text-gray-400 text-xs text-center max-w-[200px]">
+              {busca ? `Nenhum resultado para "${busca}"` : 'Tente outro laboratório ou categoria'}
+            </p>
+            {(busca || fabricanteAtivo !== 'Todos') && (
+              <button
+                onClick={() => { setBusca(''); setFabricanteAtivo('Todos') }}
+                className="mt-1 text-verde-700 text-xs font-semibold border border-verde-200 rounded-xl px-4 py-2"
+              >
+                Limpar filtros
+              </button>
+            )}
           </div>
         )}
 
         {produtosFiltrados.map(produto => {
           const qtd = quantidadeNoCarrinho(produto.id)
           return (
-            <div key={produto.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex gap-3 items-center px-4 py-3.5">
+            <div key={produto.id} className={`rounded-2xl shadow-sm border flex gap-3 items-center px-4 py-3.5 transition-colors ${
+              qtd > 0 ? 'bg-verde-50 border-verde-200' : 'bg-white border-gray-100'
+            }`}>
               {/* Imagem */}
               <button
                 onClick={() => setProdutoDetalhe(produto)}
@@ -774,6 +806,7 @@ export default function FarmaceuticoPage() {
                   qtd={qtd}
                   onMenos={() => alterarQuantidade(produto, -1)}
                   onMais={() => alterarQuantidade(produto, 1)}
+                  compact
                 />
               </div>
             </div>
@@ -782,7 +815,7 @@ export default function FarmaceuticoPage() {
       </div>
 
       {/* BARRA INFERIOR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 z-30 shadow-2xl flex items-center gap-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 pb-safe z-30 shadow-2xl flex items-center gap-3">
         {/* Carrinho com badge */}
         <div className="relative flex-shrink-0">
           <div className="w-11 h-11 rounded-full bg-verde-50 flex items-center justify-center">

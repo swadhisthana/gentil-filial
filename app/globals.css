@@ -33,6 +33,10 @@ body {
   .categoria-medicamento {
     @apply bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full;
   }
+  .categoria-Perfumaria {
+    @apply bg-pink-100 text-pink-700 text-xs px-2 py-0.5 rounded-full;
+  }
+  /* legado — mantidos por segurança */
   .categoria-cosmético {
     @apply bg-pink-100 text-pink-700 text-xs px-2 py-0.5 rounded-full;
   }
@@ -55,4 +59,30 @@ body {
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  /* iOS safe area helpers */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* Toast slide-down animation */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-down {
+  animation: slideDown 0.3s ease forwards;
+}
+
+/* Fade-out for success toasts */
+@keyframes fadeOutUp {
+  0%   { opacity: 1; transform: translateY(0); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+.animate-fade-out {
+  animation: fadeOutUp 0.5s ease 3s forwards;
 }

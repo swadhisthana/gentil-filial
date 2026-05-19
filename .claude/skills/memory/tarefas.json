@@ -1,0 +1,44 @@
+[
+  {
+    "titulo": "Melhorar busca VTEX (EAN + mais lojas)",
+    "status": "concluido",
+    "prioridade": "alta",
+    "categoria": "imagens",
+    "notas": "Script v3 criado em C:\\Users\\magao\\Downloads\\planilhas\\buscar_imagens_v3.py — EAN-first, Panvel, score 0.20. Ainda precisa ser rodado."
+  },
+  {
+    "titulo": "Rodar buscar_imagens_v3.py",
+    "status": "pendente",
+    "prioridade": "alta",
+    "categoria": "imagens",
+    "notas": "Ação manual: python buscar_imagens_v3.py (ou com --reset). Pode subir de 78% para ~88% de cobertura."
+  },
+  {
+    "titulo": "Infinite scroll server-side na tela do farmacêutico",
+    "status": "pendente",
+    "prioridade": "alta",
+    "categoria": "performance",
+    "notas": "Hoje carrega todos os 10k+ produtos em ~10 chamadas antes de mostrar qualquer coisa. Trocar por: carregar 60 por vez + IntersectionObserver + busca server-side debounced."
+  },
+  {
+    "titulo": "Adicionar lazy loading de imagens",
+    "status": "parcial",
+    "prioridade": "media",
+    "categoria": "performance",
+    "notas": "ImgProduto já usa loading=lazy. Falta garantir que imagens fora da viewport não sejam carregadas quando há muitos cards no DOM."
+  },
+  {
+    "titulo": "Criar cache local de imagens (service worker)",
+    "status": "pendente",
+    "prioridade": "alta",
+    "categoria": "performance",
+    "notas": "App é PWA (next-pwa). Adicionar estratégia CacheFirst para imagens wsrv.nl no sw customizado."
+  },
+  {
+    "titulo": "Criar pasta scripts/ com preencher-imagens.js",
+    "status": "pendente",
+    "prioridade": "baixa",
+    "categoria": "automacao",
+    "notas": "settings.local.json referencia scripts que não existem. Ou criar ou remover as permissões."
+  }
+]

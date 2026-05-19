@@ -121,6 +121,7 @@ export default function GestorPage() {
   }
 
   function sair() {
+    if (!confirm('Sair da conta do estoquista?')) return
     localStorage.removeItem('gf_usuario')
     router.push('/')
   }
@@ -138,9 +139,28 @@ export default function GestorPage() {
             <h1 className="text-lg font-bold">💊 Gentil Filial</h1>
             <p className="text-verde-200 text-xs">Painel do Estoquista · {usuario?.nome}</p>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => router.push('/gestor/admin')} className="text-verde-300 text-sm">⚙️ Admin</button>
-            <button onClick={sair} className="text-verde-300 text-sm underline">Sair</button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push('/gestor/admin')}
+              className="flex items-center gap-1.5 bg-verde-800 hover:bg-verde-700 text-verde-100 text-xs font-semibold px-3 py-2 rounded-xl active:scale-95 transition-all"
+            >
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+              </svg>
+              Admin
+            </button>
+            <button
+              onClick={sair}
+              className="flex items-center gap-1.5 bg-verde-800 hover:bg-verde-700 text-verde-100 text-xs font-semibold px-3 py-2 rounded-xl active:scale-95 transition-all"
+            >
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              Sair
+            </button>
           </div>
         </div>
 
@@ -171,11 +191,34 @@ export default function GestorPage() {
       )}
 
       <div className="px-4 mt-4 pb-8 space-y-3">
-        {carregando && <div className="text-verde-600 text-center py-8">Carregando...</div>}
+        {carregando && (
+          <div className="flex flex-col items-center gap-3 py-16">
+            <div className="w-12 h-12 border-4 border-verde-200 border-t-verde-700 rounded-full animate-spin" />
+            <p className="text-verde-600 text-sm font-medium">Carregando solicitações...</p>
+          </div>
+        )}
 
         {!carregando && lista.length === 0 && (
-          <div className="card text-center text-verde-600 py-10">
-            {aba === 'pendentes' ? 'Nenhuma solicitação pendente.' : 'Nenhum histórico ainda.'}
+          <div className="bg-white rounded-2xl border border-verde-100 shadow-sm py-14 flex flex-col items-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-verde-50 flex items-center justify-center">
+              {aba === 'pendentes' ? (
+                <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              ) : (
+                <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+              )}
+            </div>
+            <p className="text-verde-800 font-semibold text-sm">
+              {aba === 'pendentes' ? 'Tudo em dia!' : 'Sem histórico ainda'}
+            </p>
+            <p className="text-gray-400 text-xs text-center max-w-[200px]">
+              {aba === 'pendentes' ? 'Nenhuma solicitação aguardando separação.' : 'Solicitações concluídas aparecerão aqui.'}
+            </p>
           </div>
         )}
 
@@ -207,7 +250,11 @@ export default function GestorPage() {
                     {sol.status === 'concluido' && ` · ${encontrados}/${totalItens} encontrados`}
                   </p>
                 </div>
-                <span className="text-verde-400 text-lg ml-2">{expandido === sol.id ? '▲' : '▼'}</span>
+                <span className={`text-verde-400 ml-2 transition-transform duration-200 ${expandido === sol.id ? 'rotate-180' : ''}`}>
+                  <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
               </div>
 
               {/* Itens expandidos */}
@@ -237,17 +284,24 @@ export default function GestorPage() {
                       <div key={item.id}
                         className={`rounded-xl p-3 border transition-colors ${enc ? 'bg-verde-50 border-verde-300' : 'bg-gray-50 border-gray-200'}`}>
                         <div className="flex items-center gap-3">
-                          {/* Checkbox (só pendentes) */}
+                          {/* Checkbox (só pendentes) — 44px touch area mínimo */}
                           {sol.status === 'pendente' && (
                             <button
                               onClick={() => toggleEncontrado(item.id)}
-                              className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                              className="w-11 h-11 flex items-center justify-center flex-shrink-0 active:scale-90 transition-transform"
+                              aria-label={estado?.encontrado ? 'Desmarcar encontrado' : 'Marcar como encontrado'}
+                            >
+                              <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-colors ${
                                 estado?.encontrado
                                   ? 'bg-verde-700 border-verde-700 text-white'
                                   : 'border-gray-300 bg-white'
-                              }`}
-                            >
-                              {estado?.encontrado && <span className="text-sm leading-none">✓</span>}
+                              }`}>
+                                {estado?.encontrado && (
+                                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                  </svg>
+                                )}
+                              </div>
                             </button>
                           )}
 
