@@ -17,6 +17,8 @@ export type Produto = {
   fabricante?: string
   codigo_barras?: string
   imagem_url?: string | null
+  estoque_armazem?: number
+  estoque_atualizado_em?: string | null
 }
 
 export type Usuario = {

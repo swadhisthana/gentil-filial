@@ -141,6 +141,18 @@ export default function GestorPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => router.push('/gestor/importar')}
+              className="flex items-center gap-1.5 bg-verde-700 hover:bg-verde-600 text-white text-xs font-semibold px-3 py-2 rounded-xl active:scale-95 transition-all"
+              title="Importar estoque do Infarma"
+            >
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Estoque
+            </button>
+            <button
               onClick={() => router.push('/gestor/admin')}
               className="flex items-center gap-1.5 bg-verde-800 hover:bg-verde-700 text-verde-100 text-xs font-semibold px-3 py-2 rounded-xl active:scale-95 transition-all"
             >

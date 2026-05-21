@@ -199,10 +199,34 @@ export default function AdminPage() {
     await supabase.from('produtos').update({
       nome: editandoProd.nome,
       categoria: editandoProd.categoria,
+      fabricante: editandoProd.fabricante || null,
+      codigo_barras: editandoProd.codigo_barras || null,
+      imagem_url: editandoProd.imagem_url || null,
     }).eq('id', editandoProd.id)
     setEditandoProd(null)
     await carregarProdutos()
     setSalvandoProd(false)
+  }
+
+  function exportarCSV() {
+    const linhas = [
+      'id,nome,categoria,fabricante,codigo_barras,imagem_url',
+      ...produtos.map(p => [
+        p.id,
+        `"${(p.nome || '').replace(/"/g, '""')}"`,
+        p.categoria,
+        `"${(p.fabricante || '').replace(/"/g, '""')}"`,
+        p.codigo_barras || '',
+        p.imagem_url || '',
+      ].join(',')),
+    ]
+    const blob = new Blob(['﻿' + linhas.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `produtos_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   async function excluirProduto(id: number) {
@@ -379,12 +403,21 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={carregarStats}
-                  className="btn-branco w-full text-xs"
-                >
-                  Atualizar métricas
-                </button>
+                <div className="flex gap-2">
+                  <button onClick={carregarStats} className="btn-branco flex-1 text-xs">
+                    ↻ Atualizar métricas
+                  </button>
+                  <button
+                    onClick={exportarCSV}
+                    className="flex-1 text-xs font-semibold bg-verde-50 border border-verde-200 text-verde-800 rounded-xl px-3 py-2.5 active:bg-verde-100 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Exportar CSV
+                  </button>
+                </div>
               </>
             ) : (
               <div className="card text-center text-verde-500 py-8">Erro ao carregar métricas.</div>
@@ -593,12 +626,32 @@ export default function AdminPage() {
                   <div className="space-y-2">
                     <input value={editandoProd.nome}
                       onChange={e => setEditandoProd({ ...editandoProd, nome: e.target.value })}
-                      className="input-field" />
+                      className="input-field" placeholder="Nome do produto" />
                     <select value={editandoProd.categoria}
                       onChange={e => setEditandoProd({ ...editandoProd, categoria: e.target.value as Produto['categoria'] })}
                       className="input-field">
                       {CATEGORIAS.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
                     </select>
+                    <input value={editandoProd.fabricante ?? ''}
+                      onChange={e => setEditandoProd({ ...editandoProd, fabricante: e.target.value })}
+                      className="input-field" placeholder="Fabricante / Laboratório" />
+                    <input value={editandoProd.codigo_barras ?? ''}
+                      onChange={e => setEditandoProd({ ...editandoProd, codigo_barras: e.target.value })}
+                      className="input-field font-mono text-sm" placeholder="Código de barras (EAN)" />
+                    {/* URL da imagem com preview */}
+                    <div className="flex gap-2 items-start">
+                      <input value={editandoProd.imagem_url ?? ''}
+                        onChange={e => setEditandoProd({ ...editandoProd, imagem_url: e.target.value || null })}
+                        className="input-field text-xs flex-1" placeholder="URL da imagem (opcional)" />
+                      {editandoProd.imagem_url && (
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-verde-100 flex-shrink-0">
+                          <img
+                            src={`https://wsrv.nl/?url=${editandoProd.imagem_url.replace(/^https?:\/\//, '')}&w=80&h=80&fit=contain&bg=white&output=webp`}
+                            alt="" className="w-full h-full object-contain"
+                          />
+                        </div>
+                      )}
+                    </div>
                     <div className="flex gap-2">
                       <button onClick={salvarProduto} disabled={salvandoProd}
                         className="btn-verde flex-1 disabled:opacity-40">Salvar</button>
@@ -608,11 +661,20 @@ export default function AdminPage() {
                 ) : (
                   <div className="flex items-center gap-3 justify-between">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {/* Indicador de imagem */}
-                      <div
-                        className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${p.imagem_url ? 'bg-verde-500' : 'bg-gray-300'}`}
-                        title={p.imagem_url ? 'Tem imagem' : 'Sem imagem'}
-                      />
+                      {/* Thumbnail ou placeholder */}
+                      {p.imagem_url ? (
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border border-verde-100 flex-shrink-0">
+                          <img
+                            src={`https://wsrv.nl/?url=${p.imagem_url.replace(/^https?:\/\//, '')}&w=80&h=80&fit=contain&bg=white&output=webp`}
+                            alt="" loading="lazy" className="w-full h-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0 flex items-center justify-center"
+                          title="Sem imagem">
+                          <div className="w-3 h-3 rounded-full bg-gray-300" />
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="font-semibold text-verde-900 text-sm truncate">{p.nome}</p>
                         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
