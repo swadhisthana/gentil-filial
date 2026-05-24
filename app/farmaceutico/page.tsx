@@ -13,20 +13,54 @@ type ItemCarrinho = {
 
 type Periodo = 'manha' | 'noite' | 'encerrado'
 
-const CATEGORIAS = ['medicamento', 'Perfumaria'] as const
+const CATEGORIAS = ['medicamento', 'Perfumaria', 'Alimentos'] as const
 const LABELS_TITULO: Record<string, string> = {
   medicamento: 'Solicitar Medicações',
   Perfumaria: 'Solicitar Perfumaria',
+  Alimentos: 'Alimentos & Nutrição',
 }
 const ICONES_CAT: Record<string, string> = {
   medicamento: '💊',
   Perfumaria: '🧴',
+  Alimentos: '🥗',
 }
 const COR_CAT: Record<string, string> = {
   medicamento: 'from-blue-50 to-blue-100',
   Perfumaria: 'from-amber-50 to-amber-100',
+  Alimentos: 'from-green-50 to-green-100',
+}
+// Alimentos é uma categoria virtual — no banco os produtos são 'Perfumaria'
+const CATEGORIA_DB: Record<string, string> = {
+  medicamento: 'medicamento',
+  Perfumaria: 'Perfumaria',
+  Alimentos: 'Perfumaria',
 }
 const PAGINA_SIZE = 60
+
+// Sub-filtros por categoria — padrões buscados no nome do produto
+const SUB_FILTROS: Record<string, { label: string; icone: string; padroes: string[] }[]> = {
+  medicamento: [
+    { label: 'Todos',             icone: '💊', padroes: [] },
+    { label: 'Comprimidos',       icone: '🔵', padroes: ['CPR','CPS','COMP ','COMPRIMIDO','CÁPSULA','CAPSULA','DRG','DRÁGEA','DRAGEA'] },
+    { label: 'Gotas & Colírios',  icone: '💧', padroes: ['GTS','GOTA','GOTAS','COLIRIO','COLÍRIO','COL.'] },
+    { label: 'Xaropes & Líquidos',icone: '🧪', padroes: ['XPE','XAROPE','SUSP','SUSPENSAO','SUSPENSÃO','ELIXIR','SOL ','SOLUCAO','SOLUÇÃO'] },
+    { label: 'Pomadas & Géis',    icone: '🫙', padroes: ['POMADA','GEL ','CREME ','UNGÜENTO','UNGUENTO','PASTA ','LOÇÃO','LOCAO'] },
+    { label: 'Injetáveis',        icone: '💉', padroes: ['INJ','AMPOLA','AMP.'] },
+    { label: 'Sachês',            icone: '📦', padroes: ['SACHE','SACHÊ','ENVELOPE','ENV.'] },
+  ],
+  Perfumaria: [
+    { label: 'Todos',               icone: '🧴', padroes: [] },
+    { label: 'Higiene & Corpo',     icone: '🚿', padroes: ['SABONETE','SHAMPOO','CONDICIONADOR','DENTAL','ESCOVA','ENXAG','DESODORANTE','DESO','REPELENTE','PROTETOR SOL','SOLAR','HIDRATANTE','SABAO','SABÃO','DETERG','DESINFET','ANTISEPTICO','ANTISSEPTICO'] },
+    { label: 'Cosméticos & Beleza', icone: '💄', padroes: ['MAQUIAGEM','BATOM','ESMALTE','PERFUME','COLONIA','COLÔNIA','TINTURA','ACETONA','CREME FACIAL','MASCARA','MÁSCARA','BLUSH','SOMBRA','RIMEL','RÍMEL','FRAGRAN'] },
+    { label: 'Absorventes',         icone: '🌸', padroes: ['ABSORVENTE','INTIMUS','ALWAYS','CAREFREE','S.LIVRE','OB ','OB.','P/SEIOS','POS PARTO','PÓS PARTO'] },
+    { label: 'Fraldas',             icone: '👶', padroes: ['FRALDA','CALCA ABSORV','CALÇA ABSORV','POISE','PROTETOR DE LEITO','PROTETOR LEITO'] },
+  ],
+  Alimentos: [
+    { label: 'Todos',              icone: '🥗', padroes: ['WHEY','PROTEINA','PROTEÍNA','CREATINA','BCAA','VITAMINA','SUPLEMENTO','PROBIOTICO','PROBIÓTICO','MALTODEXTRINA','ALBUMINA','TERMOGENICO','TERMOGÊNICO','SORVETE','PICOLE','PICOLÉ','SUCO ','REFRIGERANTE','IOGURTE','BALA ','BISCOITO','CAFE ','CAFÉ ','BOMBON','BOMBOM','ADOCANTE','ADOÇANTE','MEL ','SNACK','RUFFLE','CHIPS','WAFER','AMENDOIM','BARRA DE CEREAL','GRANOLA'] },
+    { label: 'Suplementos',        icone: '💪', padroes: ['WHEY','PROTEINA','PROTEÍNA','CREATINA','BCAA','VITAMINA','SUPLEMENTO','PROBIOTICO','PROBIÓTICO','MALTODEXTRINA','ALBUMINA','TERMOGENICO','TERMOGÊNICO'] },
+    { label: 'Alimentos & Snacks', icone: '🍫', padroes: ['SORVETE','PICOLE','PICOLÉ','SUCO ','REFRIGERANTE','IOGURTE','BALA ','BISCOITO','CAFE ','CAFÉ ','BOMBON','BOMBOM','ADOCANTE','ADOÇANTE','MEL ','SNACK','RUFFLE','CHIPS','WAFER','AMENDOIM','BARRA DE CEREAL','GRANOLA'] },
+  ],
+}
 
 function estoqueDesatualizado(atualizadoEm: string | null | undefined): boolean {
   if (!atualizadoEm) return true
@@ -108,11 +142,54 @@ function viaProxy(url: string, w = 200, h = 240) {
   return `https://wsrv.nl/?${params.toString()}`
 }
 
+function iniciais(nome?: string): string {
+  if (!nome) return '?'
+  const palavras = nome.trim().split(/\s+/).filter(p => p.length > 2)
+  if (palavras.length >= 2) return (palavras[0][0] + palavras[1][0]).toUpperCase()
+  return nome.slice(0, 2).toUpperCase()
+}
+
+// Ícones SVG inline para o placeholder — maiores que IconForma (24→48px viewBox reusado, tamanho via className)
+function PlaceholderSvg({ tipo, className }: { tipo: string; className?: string }) {
+  const base = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, className: className ?? 'w-9 h-9' }
+  switch (tipo) {
+    case 'capsule': return <svg {...base}><path d="M3.5 10.5 L13.5 20.5 A5.66 5.66 0 0 0 20.5 13.5 L10.5 3.5 A5.66 5.66 0 0 0 3.5 10.5Z" /><line x1="8" y1="16" x2="16" y2="8" /></svg>
+    case 'pill':    return <svg {...base}><rect x="3" y="9" width="18" height="6" rx="3" /><line x1="12" y1="9" x2="12" y2="15" /></svg>
+    case 'liquid':  return <svg {...base}><path d="M9 2h6v6l3 5a6 6 0 1 1-12 0l3-5V2z" /><line x1="6" y1="15" x2="18" y2="15" /></svg>
+    case 'tube':    return <svg {...base}><rect x="2" y="9" width="14" height="6" rx="2" /><path d="M16 10l4-2v8l-4-2V10z" /><line x1="5" y1="12" x2="5" y2="12" strokeWidth={2} /></svg>
+    case 'syringe': return <svg {...base}><line x1="19" y1="2" x2="22" y2="5" /><path d="M5 19l9-9" /><path d="M10 8l6 6-4 4-6-6 4-4z" /><line x1="2" y1="22" x2="5" y2="19" /></svg>
+    case 'spray':   return <svg {...base}><rect x="4" y="11" width="10" height="10" rx="2" /><path d="M14 13h2a2 2 0 0 0 0-4h-2" /><path d="M9 11V7a3 3 0 0 1 6 0" /><line x1="18" y1="7" x2="21" y2="4" /><line x1="18" y1="4" x2="21" y2="7" /></svg>
+    case 'envelope':return <svg {...base}><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M3 7l9 7 9-7" /></svg>
+    case 'baby':    return <svg {...base}><circle cx="12" cy="5" r="2" /><path d="M8 21v-6a4 4 0 0 1 8 0v6" /><path d="M5 12h14" /><path d="M9 12v3" /><path d="M15 12v3" /></svg>
+    case 'flower':  return <svg {...base}><circle cx="12" cy="12" r="3" /><path d="M12 2a3 3 0 0 1 3 3c0 1.2-.7 2.3-1.5 3h-3C9.7 7.3 9 6.2 9 5a3 3 0 0 1 3-3z" /><path d="M12 22a3 3 0 0 1-3-3c0-1.2.7-2.3 1.5-3h3c.8.7 1.5 1.8 1.5 3a3 3 0 0 1-3 3z" /><path d="M2 12a3 3 0 0 1 3-3c1.2 0 2.3.7 3 1.5v3c-.7.8-1.8 1.5-3 1.5a3 3 0 0 1-3-3z" /><path d="M22 12a3 3 0 0 1-3 3c-1.2 0-2.3-.7-3-1.5v-3c.7-.8 1.8-1.5 3-1.5a3 3 0 0 1 3 3z" /></svg>
+    case 'food':    return <svg {...base}><path d="M12 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16z" /><path d="M12 6v4l3 3" /></svg>
+    default:        return <svg {...base}><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" /></svg>
+  }
+}
+
+// Detecta ícone e cor para perfumaria pelo nome do produto
+function iconePerfumaria(nome: string): { icon: string; bg: string; fg: string } {
+  const n = nome.toUpperCase()
+  if (/ABSORV|INTIMUS|ALWAYS|CAREFREE|OB |PROTETOR DI|PÓS PARTO|POS PARTO/.test(n)) return { icon: 'flower',   bg: 'from-pink-50 to-rose-100',     fg: 'text-rose-400' }
+  if (/FRALDA|MAMADEIRA|CHUPETA|BICO |BABY|INFANTIL|LENCO UMED|LENÇO UMED/.test(n)) return { icon: 'baby',     bg: 'from-sky-50 to-blue-100',       fg: 'text-sky-400' }
+  if (/SORVETE|PICOLE|PICOLÉ|SUCO |REFRIG|LEITE|IOGURTE|BALA |BISCOITO|CAFE |CAFÉ |CHOCOL|CEREAL|MEL /.test(n)) return { icon: 'food',  bg: 'from-orange-50 to-amber-100',   fg: 'text-amber-500' }
+  if (/MAQUIAGEM|BATOM|ESMALTE|PERFUME|COLONIA|COLÔNIA|TINTURA|BLUSH|SOMBRA|RÍMEL|RIMEL/.test(n))  return { icon: 'spray',   bg: 'from-purple-50 to-fuchsia-100', fg: 'text-fuchsia-400' }
+  return { icon: 'tube', bg: 'from-teal-50 to-emerald-100', fg: 'text-teal-500' }
+}
+
+const ICON_COLORS: Record<string, { bg: string; fg: string }> = {
+  capsule:  { bg: 'from-indigo-50 to-blue-100',   fg: 'text-indigo-400' },
+  pill:     { bg: 'from-blue-50 to-cyan-100',     fg: 'text-blue-400'   },
+  liquid:   { bg: 'from-cyan-50 to-sky-100',      fg: 'text-cyan-500'   },
+  tube:     { bg: 'from-teal-50 to-emerald-100',  fg: 'text-teal-500'   },
+  syringe:  { bg: 'from-red-50 to-rose-100',      fg: 'text-red-400'    },
+  spray:    { bg: 'from-purple-50 to-violet-100', fg: 'text-violet-400' },
+  envelope: { bg: 'from-amber-50 to-yellow-100',  fg: 'text-amber-500'  },
+}
+
 function ImgProduto({ produto, size = 'sm' }: { produto: { categoria: string; imagem_url?: string | null; nome?: string }; size?: 'sm' | 'lg' }) {
   const [erro, setErro] = useState(false)
   const dims = size === 'lg' ? 'w-32 h-32' : 'w-[88px] h-[100px]'
-  const placeholderIcon = ICONES_CAT[produto.categoria] || '📦'
-  const placeholderGrad = COR_CAT[produto.categoria] || 'from-gray-50 to-gray-100'
   if (produto.imagem_url && !erro) {
     const pw = size === 'lg' ? 320 : 200
     const ph = size === 'lg' ? 320 : 240
@@ -124,9 +201,29 @@ function ImgProduto({ produto, size = 'sm' }: { produto: { categoria: string; im
       </div>
     )
   }
+
+  // Placeholder SVG inteligente — ícone baseado na forma do produto
+  let icon: string, bg: string, fg: string, label: string
+  if (produto.categoria === 'Perfumaria') {
+    const p = iconePerfumaria(produto.nome || '')
+    icon = p.icon; bg = p.bg; fg = p.fg
+    label = 'Perfumaria'
+  } else {
+    const forma = extrairForma(produto.nome || '', produto.categoria)
+    icon = forma.icon
+    label = forma.forma
+    const c = ICON_COLORS[icon] ?? { bg: 'from-slate-50 to-slate-100', fg: 'text-slate-400' }
+    bg = c.bg; fg = c.fg
+  }
+  const iconSize = size === 'lg' ? 'w-12 h-12' : 'w-8 h-8'
+  const labelSize = size === 'lg' ? 'text-[10px]' : 'text-[8px]'
+
   return (
-    <div className={`${dims} rounded-xl bg-gradient-to-br ${placeholderGrad} flex items-center justify-center flex-shrink-0 border border-gray-100`}>
-      <span className={size === 'lg' ? 'text-5xl opacity-70' : 'text-3xl opacity-70'}>{placeholderIcon}</span>
+    <div className={`${dims} rounded-xl bg-gradient-to-br ${bg} flex flex-col items-center justify-center flex-shrink-0 border border-white/80 gap-1 shadow-inner`}>
+      <div className={`${fg} opacity-75`}>
+        <PlaceholderSvg tipo={icon} className={iconSize} />
+      </div>
+      <span className={`${labelSize} ${fg} opacity-60 font-semibold uppercase tracking-wide`}>{label}</span>
     </div>
   )
 }
@@ -404,7 +501,13 @@ export default function FarmaceuticoPage() {
   const router = useRouter()
   const [usuario, setUsuario] = useState<Usuario | null>(null)
   const [produtos, setProdutos] = useState<Produto[]>([])
-  const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([])
+  const [carrinho, setCarrinho] = useState<ItemCarrinho[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const salvo = localStorage.getItem('gf_carrinho')
+      return salvo ? JSON.parse(salvo) : []
+    } catch { return [] }
+  })
   const [busca, setBusca] = useState('')
   const [categoriaAtiva, setCategoriaAtiva] = useState<string>('medicamento')
   const [fabricanteAtivo, setFabricanteAtivo] = useState<string>('Todos')
@@ -421,14 +524,16 @@ export default function FarmaceuticoPage() {
   const [modalLab, setModalLab] = useState(false)
   const [paginaAtual, setPaginaAtual] = useState(1)
   const [totalProdutos, setTotalProdutos] = useState(0)
+  const [subFiltro, setSubFiltro] = useState<string>('Todos')
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Carrega lista de fabricantes distintos para o modal de filtro
   const carregarFabricantes = useCallback(async (cat: string) => {
+    const catDB = CATEGORIA_DB[cat] ?? cat
     const { data } = await supabase
       .from('produtos')
       .select('fabricante')
-      .eq('categoria', cat)
+      .eq('categoria', catDB)
       .not('fabricante', 'is', null)
       .limit(2000)
     if (data) {
@@ -439,9 +544,9 @@ export default function FarmaceuticoPage() {
 
   // Carrega uma página de produtos (server-side — categoria + fabricante + busca)
   const carregarPagina = useCallback(async ({
-    cat, pagina, fab, texto, inicial = false,
+    cat, pagina, fab, texto, sub = 'Todos', inicial = false,
   }: {
-    cat: string; pagina: number; fab: string; texto: string; inicial?: boolean
+    cat: string; pagina: number; fab: string; texto: string; sub?: string; inicial?: boolean
   }) => {
     if (inicial) setCarregando(true)
     else setCarregandoPagina(true)
@@ -449,17 +554,26 @@ export default function FarmaceuticoPage() {
     const offset = (pagina - 1) * PAGINA_SIZE
     const textoBusca = texto.trim()
 
+    // Monta filtro de sub-categoria (OR entre padrões)
+    const subDef = SUB_FILTROS[cat]?.find(s => s.label === sub)
+    const subPadroes = subDef && subDef.padroes.length > 0 ? subDef.padroes : null
+    const subFiltroStr = subPadroes ? subPadroes.map(p => `nome.ilike.%${p}%`).join(',') : null
+
+    const catDB = CATEGORIA_DB[cat] ?? cat
+
     // Count query
-    let countQ = supabase.from('produtos').select('*', { count: 'exact', head: true }).eq('categoria', cat)
+    let countQ = supabase.from('produtos').select('*', { count: 'exact', head: true }).eq('categoria', catDB).gt('estoque_armazem', 0)
     if (fab !== 'Todos') countQ = countQ.eq('fabricante', fab)
     if (textoBusca.length >= 2) countQ = countQ.ilike('nome', `%${textoBusca}%`)
+    if (subFiltroStr) countQ = countQ.or(subFiltroStr)
 
     // Data query
     let dataQ = supabase.from('produtos')
       .select('id, nome, categoria, fabricante, codigo_barras, imagem_url, estoque_armazem, estoque_atualizado_em')
-      .eq('categoria', cat).order('nome').range(offset, offset + PAGINA_SIZE - 1)
+      .eq('categoria', catDB).gt('estoque_armazem', 0).order('nome').range(offset, offset + PAGINA_SIZE - 1)
     if (fab !== 'Todos') dataQ = dataQ.eq('fabricante', fab)
     if (textoBusca.length >= 2) dataQ = dataQ.ilike('nome', `%${textoBusca}%`)
+    if (subFiltroStr) dataQ = dataQ.or(subFiltroStr)
 
     const [{ count }, { data }] = await Promise.all([countQ, dataQ])
 
@@ -487,16 +601,28 @@ export default function FarmaceuticoPage() {
     }
   }, [router, carregarFabricantes, carregarPagina])
 
+  // Persiste carrinho no localStorage sempre que mudar
+  useEffect(() => {
+    try { localStorage.setItem('gf_carrinho', JSON.stringify(carrinho)) } catch { /* ignora */ }
+  }, [carrinho])
+
   // ── Handlers (imperativos — evitam loops de useEffect) ────────────────────
 
   function handleCategoriaChange(cat: string) {
     if (cat === categoriaAtiva) return
     setCategoriaAtiva(cat)
+    setSubFiltro('Todos')
     setFabricanteAtivo('Todos')
     setBusca('')
     setPaginaAtual(1)
     carregarFabricantes(cat)
-    carregarPagina({ cat, pagina: 1, fab: 'Todos', texto: '' })
+    carregarPagina({ cat, pagina: 1, fab: 'Todos', texto: '', sub: 'Todos' })
+  }
+
+  function handleSubFiltro(sub: string) {
+    setSubFiltro(sub)
+    setPaginaAtual(1)
+    carregarPagina({ cat: categoriaAtiva, pagina: 1, fab: fabricanteAtivo, texto: busca, sub })
   }
 
   function handleBuscaChange(texto: string) {
@@ -504,7 +630,7 @@ export default function FarmaceuticoPage() {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
     searchTimerRef.current = setTimeout(() => {
       setPaginaAtual(1)
-      carregarPagina({ cat: categoriaAtiva, pagina: 1, fab: fabricanteAtivo, texto })
+      carregarPagina({ cat: categoriaAtiva, pagina: 1, fab: fabricanteAtivo, texto, sub: subFiltro })
     }, 400)
   }
 
@@ -512,22 +638,23 @@ export default function FarmaceuticoPage() {
     setFabricanteAtivo(fab)
     setPaginaAtual(1)
     setModalLab(false)
-    carregarPagina({ cat: categoriaAtiva, pagina: 1, fab, texto: busca })
+    carregarPagina({ cat: categoriaAtiva, pagina: 1, fab, texto: busca, sub: subFiltro })
   }
 
   function handlePagina(p: number) {
     const max = Math.max(1, Math.ceil(totalProdutos / PAGINA_SIZE))
     const nova = Math.max(1, Math.min(p, max))
     setPaginaAtual(nova)
-    carregarPagina({ cat: categoriaAtiva, pagina: nova, fab: fabricanteAtivo, texto: busca })
+    carregarPagina({ cat: categoriaAtiva, pagina: nova, fab: fabricanteAtivo, texto: busca, sub: subFiltro })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function limparFiltros() {
     setBusca('')
     setFabricanteAtivo('Todos')
+    setSubFiltro('Todos')
     setPaginaAtual(1)
-    carregarPagina({ cat: categoriaAtiva, pagina: 1, fab: 'Todos', texto: '' })
+    carregarPagina({ cat: categoriaAtiva, pagina: 1, fab: 'Todos', texto: '', sub: 'Todos' })
   }
 
   function sair() {
@@ -570,6 +697,7 @@ export default function FarmaceuticoPage() {
       const { error: itensError } = await supabase.from('itens_solicitacao').insert(itens)
       if (itensError) throw new Error('Erro ao inserir itens')
       setCarrinho([])
+      localStorage.removeItem('gf_carrinho')
       setRevisao(false)
       setSucesso(true)
       setTimeout(() => setSucesso(false), 4000)
@@ -650,6 +778,20 @@ export default function FarmaceuticoPage() {
                 categoriaAtiva === cat ? 'bg-verde-800 text-white' : 'bg-verde-50 text-verde-700 border border-verde-200'
               }`}>
               {ICONES_CAT[cat]} {cat.charAt(0).toUpperCase() + cat.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Sub-filtros */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+          {(SUB_FILTROS[categoriaAtiva] ?? []).map(sf => (
+            <button key={sf.label} onClick={() => handleSubFiltro(sf.label)}
+              className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                subFiltro === sf.label
+                  ? 'bg-verde-600 text-white'
+                  : 'bg-gray-100 text-gray-600 border border-gray-200'
+              }`}>
+              {sf.icone} {sf.label}
             </button>
           ))}
         </div>
@@ -777,7 +919,7 @@ export default function FarmaceuticoPage() {
             : null
           return (
             <div key={produto.id} className={`rounded-2xl shadow-sm border flex gap-3 items-center px-4 py-3.5 transition-colors ${
-              qtd > 0 ? 'bg-verde-50 border-verde-200' : produto.estoque_armazem === 0 ? 'bg-gray-50 border-gray-200 opacity-70' : 'bg-white border-gray-100'
+              qtd > 0 ? 'bg-verde-50 border-verde-200' : 'bg-white border-gray-100'
             }`}>
               <button onClick={() => setProdutoDetalhe(produto)}
                 className="flex-shrink-0 active:opacity-70" aria-label="Ver detalhes">
@@ -813,14 +955,10 @@ export default function FarmaceuticoPage() {
                 )}
 
                 {/* Badge de estoque */}
-                {produto.estoque_armazem !== undefined && (
-                  produto.estoque_armazem === 0
-                    ? <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                        📦 Sem estoque
-                      </span>
-                    : <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold text-verde-700 bg-verde-50 px-2 py-0.5 rounded-full">
-                        📦 {produto.estoque_armazem} un.
-                      </span>
+                {produto.estoque_armazem !== undefined && produto.estoque_armazem > 0 && (
+                  <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold text-verde-700 bg-verde-50 px-2 py-0.5 rounded-full">
+                    📦 {produto.estoque_armazem} un.
+                  </span>
                 )}
               </div>
 
