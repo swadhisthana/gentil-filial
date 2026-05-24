@@ -36,6 +36,14 @@ const CATEGORIA_DB: Record<string, string> = {
   Alimentos: 'Perfumaria',
 }
 
+// Padrões de fórmulas / leites nutricionais — usados em Leite e na exclusão de Perfumaria
+const LEITE_PADROES = [
+  'APTAMIL','APTANUTRI','NESTROGENO','NESTOGENO',
+  'NAN COMFORT','NAN SUPREME','NAN SOY','NAN PRO','NAN AR','NAN HA','NANCARE',
+  'NINHO','NUTREN','ENFAMIL','PEDIASURE','SUSTAGEN','MUCILON','NEOCATE',
+  'MILNUTRI','PREGOMIN','BEBELAC','FORTINI','SIMILAC','NESLAC','FORTIFIT',
+]
+
 // Padrões de Alimentos excluídos do "Todos" de Perfumaria para evitar duplicatas
 const ALIMENTOS_PADROES_EXCLUIR = [
   'WHEY','PROTEINA','PROTEÍNA','CREATINA','BCAA','VITAMINA','SUPLEMENTO',
@@ -43,6 +51,7 @@ const ALIMENTOS_PADROES_EXCLUIR = [
   'SORVETE','PICOLE','PICOLÉ','SUCO ','REFRIGERANTE','IOGURTE','BALA ',
   'BISCOITO','CAFE ','CAFÉ ','BOMBON','BOMBOM','ADOCANTE','ADOÇANTE','MEL ',
   'SNACK','RUFFLE','CHIPS','WAFER','AMENDOIM','BARRA DE CEREAL','GRANOLA',
+  ...LEITE_PADROES,
 ]
 const PAGINA_SIZE = 60
 
@@ -56,17 +65,18 @@ const SUB_FILTROS: Record<string, { label: string; icone: string; padroes: strin
     { label: 'Xaropes & Líquidos',icone: '🧪', padroes: ['XPE','XAROPE','SUSP','SUSPENSAO','SUSPENSÃO','ELIXIR','SOL ','SOLUCAO','SOLUÇÃO'] },
     { label: 'Pomadas & Géis',    icone: '🫙', padroes: ['POMADA','GEL ','CREME ','UNGÜENTO','UNGUENTO','PASTA ','LOÇÃO','LOCAO'] },
     { label: 'Injetáveis',        icone: '💉', padroes: ['INJ','AMPOLA','AMP.'] },
-    { label: 'Sachês',            icone: '📦', padroes: ['SACHE','SACHÊ','ENVELOPE','ENV.'] },
+    { label: 'Sachês',            icone: '📦', padroes: ['SACHE','SACHÊ'] },
   ],
   Perfumaria: [
     { label: 'Todos',               icone: '🧴', padroes: [] },
     { label: 'Higiene & Corpo',     icone: '🚿', padroes: ['SABONETE','SHAMPOO','CONDICIONADOR','DENTAL','ESCOVA','ENXAG','DESODORANTE','DESO','REPELENTE','PROTETOR SOL','SOLAR','HIDRATANTE','SABAO','SABÃO','DETERG','DESINFET','ANTISEPTICO','ANTISSEPTICO'] },
     { label: 'Cosméticos & Beleza', icone: '💄', padroes: ['MAQUIAGEM','BATOM','ESMALTE','PERFUME','COLONIA','COLÔNIA','TINTURA','ACETONA','CREME FACIAL','MASCARA','MÁSCARA','BLUSH','SOMBRA','RIMEL','RÍMEL','FRAGRAN'] },
     { label: 'Absorventes',         icone: '🌸', padroes: ['ABSORVENTE','INTIMUS','ALWAYS','CAREFREE','S.LIVRE','OB ','OB.','P/SEIOS','POS PARTO','PÓS PARTO'] },
-    { label: 'Fraldas',             icone: '👶', padroes: ['FRALDA','CALCA ABSORV','CALÇA ABSORV','POISE','PROTETOR DE LEITO','PROTETOR LEITO','PAMPERS','BABYSEC','MAMYPOKO','HIPOPO','HUGGIES','COMFORT','CONFORT'], excluir: ['COND.','COND ','CR. ','CR.P','ABS. ','ABS.P','AMACIANTE','SHAMPOO','SABONETE','LENCO','LENÇO','TOALHA UMED'] },
+    { label: 'Fraldas',             icone: '👶', padroes: ['FRALDA','FR. ','FR.P','FR.G','FR.M','FR.X','FRAL ','FRAL.','CALCA ABSORV','CALÇA ABSORV','POISE','PROTETOR DE LEITO','PROTETOR LEITO'], excluir: ['COND.','COND ','CR. ','CR.P','ABS. ','ABS.P'] },
   ],
   Alimentos: [
-    { label: 'Todos',              icone: '🥗', padroes: ['WHEY','PROTEINA','PROTEÍNA','CREATINA','BCAA','VITAMINA','SUPLEMENTO','PROBIOTICO','PROBIÓTICO','MALTODEXTRINA','ALBUMINA','TERMOGENICO','TERMOGÊNICO','SORVETE','PICOLE','PICOLÉ','SUCO ','REFRIGERANTE','IOGURTE','BALA ','BISCOITO','CAFE ','CAFÉ ','BOMBON','BOMBOM','ADOCANTE','ADOÇANTE','MEL ','SNACK','RUFFLE','CHIPS','WAFER','AMENDOIM','BARRA DE CEREAL','GRANOLA'] },
+    { label: 'Todos',              icone: '🥗', padroes: ['WHEY','PROTEINA','PROTEÍNA','CREATINA','BCAA','VITAMINA','SUPLEMENTO','PROBIOTICO','PROBIÓTICO','MALTODEXTRINA','ALBUMINA','TERMOGENICO','TERMOGÊNICO','SORVETE','PICOLE','PICOLÉ','SUCO ','REFRIGERANTE','IOGURTE','BALA ','BISCOITO','CAFE ','CAFÉ ','BOMBON','BOMBOM','ADOCANTE','ADOÇANTE','MEL ','SNACK','RUFFLE','CHIPS','WAFER','AMENDOIM','BARRA DE CEREAL','GRANOLA','APTAMIL','APTANUTRI','NESTROGENO','NESTOGENO','NAN COMFORT','NAN SUPREME','NAN SOY','NAN PRO','NAN AR','NAN HA','NANCARE','NINHO','NUTREN','ENFAMIL','PEDIASURE','SUSTAGEN','MUCILON','NEOCATE','MILNUTRI','PREGOMIN','BEBELAC','FORTINI','SIMILAC','NESLAC','FORTIFIT'] },
+    { label: 'Leite',              icone: '🍼', padroes: ['APTAMIL','APTANUTRI','NESTROGENO','NESTOGENO','NAN COMFORT','NAN SUPREME','NAN SOY','NAN PRO','NAN AR','NAN HA','NANCARE','NINHO','NUTREN','ENFAMIL','PEDIASURE','SUSTAGEN','MUCILON','NEOCATE','MILNUTRI','PREGOMIN','BEBELAC','FORTINI','SIMILAC','NESLAC','FORTIFIT'] },
     { label: 'Suplementos',        icone: '💪', padroes: ['WHEY','PROTEINA','PROTEÍNA','CREATINA','BCAA','VITAMINA','SUPLEMENTO','PROBIOTICO','PROBIÓTICO','MALTODEXTRINA','ALBUMINA','TERMOGENICO','TERMOGÊNICO'] },
     { label: 'Alimentos & Snacks', icone: '🍫', padroes: ['SORVETE','PICOLE','PICOLÉ','SUCO ','REFRIGERANTE','IOGURTE','BALA ','BISCOITO','CAFE ','CAFÉ ','BOMBON','BOMBOM','ADOCANTE','ADOÇANTE','MEL ','SNACK','RUFFLE','CHIPS','WAFER','AMENDOIM','BARRA DE CEREAL','GRANOLA'] },
   ],
