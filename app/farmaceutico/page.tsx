@@ -60,10 +60,10 @@ const PAGINA_SIZE = 60
 const SUB_FILTROS: Record<string, { label: string; icone: string; padroes: string[]; excluir?: string[] }[]> = {
   medicamento: [
     { label: 'Todos',             icone: '💊', padroes: [] },
-    { label: 'Comprimidos',       icone: '🔵', padroes: ['CPR','CPS','COMP ','COMPRIMIDO','CÁPSULA','CAPSULA','DRG','DRÁGEA','DRAGEA'] },
-    { label: 'Gotas & Colírios',  icone: '💧', padroes: ['GTS','GOTA','GOTAS','COLIRIO','COLÍRIO','COL.'] },
+    { label: 'Comprimidos',       icone: '🔵', padroes: ['CPR','CPS ','CPS.','COMP ','COMPRIMIDO','CÁPSULA','CAPSULA','DRG','DRÁGEA','DRAGEA'] },
+    { label: 'Gotas & Colírios',  icone: '💧', padroes: ['GTS','GOTA','GOTAS','COLIRIO','COLÍRIO','COL.','COL '] },
     { label: 'Xaropes & Líquidos',icone: '🧪', padroes: ['XPE','XAROPE','SUSP','SUSPENSAO','SUSPENSÃO','ELIXIR','SOL ','SOLUCAO','SOLUÇÃO'] },
-    { label: 'Pomadas & Géis',    icone: '🫙', padroes: ['POMADA','GEL ','CREME ','UNGÜENTO','UNGUENTO','PASTA ','LOÇÃO','LOCAO'] },
+    { label: 'Pomadas & Géis',    icone: '🫙', padroes: ['POMADA','POM.','POM ','GEL ','CREME ','CR. ','CR.P','UNGÜENTO','UNGUENTO','PASTA ','LOÇÃO','LOCAO'] },
     { label: 'Injetáveis',        icone: '💉', padroes: ['INJ','AMPOLA','AMP.'] },
     { label: 'Sachês',            icone: '📦', padroes: ['SACHE','SACHÊ'] },
   ],
@@ -76,10 +76,19 @@ const SUB_FILTROS: Record<string, { label: string; icone: string; padroes: strin
   ],
   Alimentos: [
     { label: 'Todos',              icone: '🥗', padroes: ['WHEY','PROTEINA','PROTEÍNA','CREATINA','BCAA','VITAMINA','SUPLEMENTO','PROBIOTICO','PROBIÓTICO','MALTODEXTRINA','ALBUMINA','TERMOGENICO','TERMOGÊNICO','SORVETE','PICOLE','PICOLÉ','SUCO ','REFRIGERANTE','IOGURTE','BALA ','BISCOITO','CAFE ','CAFÉ ','BOMBON','BOMBOM','ADOCANTE','ADOÇANTE','MEL ','SNACK','RUFFLE','CHIPS','WAFER','AMENDOIM','BARRA DE CEREAL','GRANOLA','APTAMIL','APTANUTRI','NESTROGENO','NESTOGENO','NAN COMFORT','NAN SUPREME','NAN SOY','NAN PRO','NAN AR','NAN HA','NANCARE','NINHO','NUTREN','ENFAMIL','PEDIASURE','SUSTAGEN','MUCILON','NEOCATE','MILNUTRI','PREGOMIN','BEBELAC','FORTINI','SIMILAC','NESLAC','FORTIFIT'] },
-    { label: 'Leite',              icone: '🍼', padroes: ['APTAMIL','APTANUTRI','NESTROGENO','NESTOGENO','NAN COMFORT','NAN SUPREME','NAN SOY','NAN PRO','NAN AR','NAN HA','NANCARE','NINHO','NUTREN','ENFAMIL','PEDIASURE','SUSTAGEN','MUCILON','NEOCATE','MILNUTRI','PREGOMIN','BEBELAC','FORTINI','SIMILAC','NESLAC','FORTIFIT'] },
-    { label: 'Suplementos',        icone: '💪', padroes: ['WHEY','PROTEINA','PROTEÍNA','CREATINA','BCAA','VITAMINA','SUPLEMENTO','PROBIOTICO','PROBIÓTICO','MALTODEXTRINA','ALBUMINA','TERMOGENICO','TERMOGÊNICO'] },
-    { label: 'Alimentos & Snacks', icone: '🍫', padroes: ['SORVETE','PICOLE','PICOLÉ','SUCO ','REFRIGERANTE','IOGURTE','BALA ','BISCOITO','CAFE ','CAFÉ ','BOMBON','BOMBOM','ADOCANTE','ADOÇANTE','MEL ','SNACK','RUFFLE','CHIPS','WAFER','AMENDOIM','BARRA DE CEREAL','GRANOLA'] },
+    { label: 'Leite',              icone: '🍼', padroes: ['APTAMIL','APTANUTRI','NESTROGENO','NESTOGENO','NAN COMFORT','NAN SUPREME','NAN SOY','NAN PRO','NAN AR','NAN HA','NANCARE','NINHO','NUTREN','ENFAMIL','PEDIASURE','SUSTAGEN','MUCILON','NEOCATE','MILNUTRI','PREGOMIN','BEBELAC','FORTINI','SIMILAC','NESLAC','FORTIFIT'], excluir: ['SONINHO','BARRA ','BARRA.','SABONETE','SABAO','SABÃO','SHAMPOO','COND.','CR. ','POM.','SAB.'] },
+    { label: 'Suplementos',        icone: '💪', padroes: ['WHEY','PROTEINA','PROTEÍNA','CREATINA','BCAA','VITAMINA','SUPLEMENTO','PROBIOTICO','PROBIÓTICO','MALTODEXTRINA','ALBUMINA','TERMOGENICO','TERMOGÊNICO'], excluir: ['SABONETE','SABAO','SABÃO','SHAMPOO','CONDICIONADOR','COND.','CR. ','POM.','SAB.','LEITE DE ROSAS'] },
+    { label: 'Alimentos & Snacks', icone: '🍫', padroes: ['SORVETE','PICOLE','PICOLÉ','SUCO ','REFRIGERANTE','IOGURTE','BALA ','BISCOITO','CAFE ','CAFÉ ','BOMBON','BOMBOM','ADOCANTE','ADOÇANTE','MEL ','SNACK','RUFFLE','CHIPS','WAFER','AMENDOIM','BARRA DE CEREAL','GRANOLA'], excluir: ['SABONETE','SABAO','SABÃO','SHAMPOO','SAB.','SABONETE LIQUIDO'] },
   ],
+}
+
+// Determina a categoria de exibição (tag visual) — Alimentos é virtual
+function categoriaExibicao(produto: { nome: string | null; categoria: string }): 'Medicamento' | 'Perfumaria' | 'Alimentos' {
+  if (produto.categoria === 'medicamento') return 'Medicamento'
+  const nomeUp = (produto.nome || '').toUpperCase()
+  // Se bate em algum padrão de Alimentos, mostra como Alimentos
+  if (ALIMENTOS_PADROES_EXCLUIR.some(p => nomeUp.includes(p))) return 'Alimentos'
+  return 'Perfumaria'
 }
 
 function estoqueDesatualizado(atualizadoEm: string | null | undefined): boolean {
@@ -966,9 +975,17 @@ export default function FarmaceuticoPage() {
                 <p className="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2">{produto.nome}</p>
 
                 <div className="flex flex-wrap gap-1.5 mt-1.5">
-                  <span className="bg-verde-100 text-verde-800 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
-                    {produto.categoria === 'Perfumaria' ? 'Perfumaria' : 'Medicamento'}
-                  </span>
+                  {(() => {
+                    const cat = categoriaExibicao(produto)
+                    const cor = cat === 'Alimentos' ? 'bg-emerald-100 text-emerald-800'
+                              : cat === 'Perfumaria' ? 'bg-amber-100 text-amber-800'
+                              : 'bg-verde-100 text-verde-800'
+                    return (
+                      <span className={`${cor} text-[11px] font-semibold px-2.5 py-0.5 rounded-full`}>
+                        {cat}
+                      </span>
+                    )
+                  })()}
                   {produto.fabricante && (
                     <span className="border border-gray-300 text-gray-600 text-[11px] font-medium px-2.5 py-0.5 rounded-full">
                       {produto.fabricante}
