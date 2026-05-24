@@ -47,7 +47,8 @@ const ALIMENTOS_PADROES_EXCLUIR = [
 const PAGINA_SIZE = 60
 
 // Sub-filtros por categoria — padrões buscados no nome do produto
-const SUB_FILTROS: Record<string, { label: string; icone: string; padroes: string[] }[]> = {
+// excluir: padrões que, se presentes no nome, removem o produto do filtro (AND NOT)
+const SUB_FILTROS: Record<string, { label: string; icone: string; padroes: string[]; excluir?: string[] }[]> = {
   medicamento: [
     { label: 'Todos',             icone: '💊', padroes: [] },
     { label: 'Comprimidos',       icone: '🔵', padroes: ['CPR','CPS','COMP ','COMPRIMIDO','CÁPSULA','CAPSULA','DRG','DRÁGEA','DRAGEA'] },
@@ -62,7 +63,7 @@ const SUB_FILTROS: Record<string, { label: string; icone: string; padroes: strin
     { label: 'Higiene & Corpo',     icone: '🚿', padroes: ['SABONETE','SHAMPOO','CONDICIONADOR','DENTAL','ESCOVA','ENXAG','DESODORANTE','DESO','REPELENTE','PROTETOR SOL','SOLAR','HIDRATANTE','SABAO','SABÃO','DETERG','DESINFET','ANTISEPTICO','ANTISSEPTICO'] },
     { label: 'Cosméticos & Beleza', icone: '💄', padroes: ['MAQUIAGEM','BATOM','ESMALTE','PERFUME','COLONIA','COLÔNIA','TINTURA','ACETONA','CREME FACIAL','MASCARA','MÁSCARA','BLUSH','SOMBRA','RIMEL','RÍMEL','FRAGRAN'] },
     { label: 'Absorventes',         icone: '🌸', padroes: ['ABSORVENTE','INTIMUS','ALWAYS','CAREFREE','S.LIVRE','OB ','OB.','P/SEIOS','POS PARTO','PÓS PARTO'] },
-    { label: 'Fraldas',             icone: '👶', padroes: ['FRALDA','CALCA ABSORV','CALÇA ABSORV','POISE','PROTETOR DE LEITO','PROTETOR LEITO','BABYSEC','MAMYPOKO','HIPOPO'] },
+    { label: 'Fraldas',             icone: '👶', padroes: ['FRALDA','CALCA ABSORV','CALÇA ABSORV','POISE','PROTETOR DE LEITO','PROTETOR LEITO','BABYSEC','MAMYPOKO','HIPOPO'], excluir: ['COND.','COND ','CR. ','CR.P','ABS. ','ABS.P'] },
   ],
   Alimentos: [
     { label: 'Todos',              icone: '🥗', padroes: ['WHEY','PROTEINA','PROTEÍNA','CREATINA','BCAA','VITAMINA','SUPLEMENTO','PROBIOTICO','PROBIÓTICO','MALTODEXTRINA','ALBUMINA','TERMOGENICO','TERMOGÊNICO','SORVETE','PICOLE','PICOLÉ','SUCO ','REFRIGERANTE','IOGURTE','BALA ','BISCOITO','CAFE ','CAFÉ ','BOMBON','BOMBOM','ADOCANTE','ADOÇANTE','MEL ','SNACK','RUFFLE','CHIPS','WAFER','AMENDOIM','BARRA DE CEREAL','GRANOLA'] },
@@ -575,6 +576,10 @@ export default function FarmaceuticoPage() {
     if (fab !== 'Todos') countQ = countQ.eq('fabricante', fab)
     if (textoBusca.length >= 2) countQ = countQ.ilike('nome', `%${textoBusca}%`)
     if (subFiltroStr) countQ = countQ.or(subFiltroStr)
+    // Exclusões do sub-filtro (AND NOT por padrão)
+    if (subDef?.excluir) {
+      for (const p of subDef.excluir) countQ = countQ.not('nome', 'ilike', `%${p}%`)
+    }
     // Perfumaria "Todos": exclui produtos que pertencem à aba Alimentos
     if (cat === 'Perfumaria' && !subFiltroStr) {
       for (const p of ALIMENTOS_PADROES_EXCLUIR) countQ = countQ.not('nome', 'ilike', `%${p}%`)
@@ -587,6 +592,10 @@ export default function FarmaceuticoPage() {
     if (fab !== 'Todos') dataQ = dataQ.eq('fabricante', fab)
     if (textoBusca.length >= 2) dataQ = dataQ.ilike('nome', `%${textoBusca}%`)
     if (subFiltroStr) dataQ = dataQ.or(subFiltroStr)
+    // Exclusões do sub-filtro (AND NOT por padrão)
+    if (subDef?.excluir) {
+      for (const p of subDef.excluir) dataQ = dataQ.not('nome', 'ilike', `%${p}%`)
+    }
     // Perfumaria "Todos": exclui produtos que pertencem à aba Alimentos
     if (cat === 'Perfumaria' && !subFiltroStr) {
       for (const p of ALIMENTOS_PADROES_EXCLUIR) dataQ = dataQ.not('nome', 'ilike', `%${p}%`)
