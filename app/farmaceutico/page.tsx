@@ -63,7 +63,7 @@ const SUB_FILTROS: Record<string, { label: string; icone: string; padroes: strin
     { label: 'Higiene & Corpo',     icone: '🚿', padroes: ['SABONETE','SHAMPOO','CONDICIONADOR','DENTAL','ESCOVA','ENXAG','DESODORANTE','DESO','REPELENTE','PROTETOR SOL','SOLAR','HIDRATANTE','SABAO','SABÃO','DETERG','DESINFET','ANTISEPTICO','ANTISSEPTICO'] },
     { label: 'Cosméticos & Beleza', icone: '💄', padroes: ['MAQUIAGEM','BATOM','ESMALTE','PERFUME','COLONIA','COLÔNIA','TINTURA','ACETONA','CREME FACIAL','MASCARA','MÁSCARA','BLUSH','SOMBRA','RIMEL','RÍMEL','FRAGRAN'] },
     { label: 'Absorventes',         icone: '🌸', padroes: ['ABSORVENTE','INTIMUS','ALWAYS','CAREFREE','S.LIVRE','OB ','OB.','P/SEIOS','POS PARTO','PÓS PARTO'] },
-    { label: 'Fraldas',             icone: '👶', padroes: ['FRALDA','CALCA ABSORV','CALÇA ABSORV','POISE','PROTETOR DE LEITO','PROTETOR LEITO','BABYSEC','MAMYPOKO','HIPOPO'], excluir: ['COND.','COND ','CR. ','CR.P','ABS. ','ABS.P'] },
+    { label: 'Fraldas',             icone: '👶', padroes: ['FRALDA','CALCA ABSORV','CALÇA ABSORV','POISE','PROTETOR DE LEITO','PROTETOR LEITO','PAMPERS','BABYSEC','MAMYPOKO','HIPOPO','HUGGIES','COMFORT','CONFORT'], excluir: ['COND.','COND ','CR. ','CR.P','ABS. ','ABS.P','AMACIANTE','SHAMPOO','SABONETE','LENCO','LENÇO','TOALHA UMED'] },
   ],
   Alimentos: [
     { label: 'Todos',              icone: '🥗', padroes: ['WHEY','PROTEINA','PROTEÍNA','CREATINA','BCAA','VITAMINA','SUPLEMENTO','PROBIOTICO','PROBIÓTICO','MALTODEXTRINA','ALBUMINA','TERMOGENICO','TERMOGÊNICO','SORVETE','PICOLE','PICOLÉ','SUCO ','REFRIGERANTE','IOGURTE','BALA ','BISCOITO','CAFE ','CAFÉ ','BOMBON','BOMBOM','ADOCANTE','ADOÇANTE','MEL ','SNACK','RUFFLE','CHIPS','WAFER','AMENDOIM','BARRA DE CEREAL','GRANOLA'] },
